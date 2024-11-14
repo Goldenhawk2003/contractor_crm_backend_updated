@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Room</title>
+</head>
+<body>
+    <h2>Chat Room: {{ room_name }}</h2>
+
+    <div id="chat-log"></div>
+    <input id="chat-message-input" type="text" placeholder="Type a message...">
+    <button id="chat-message-send">Send</button>
+
+    <script type="text/javascript">
+        const roomName = "{{ room_name }}";
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+        );
+
+        chatSocket.onopen = function (e) {
+            console.log('WebSocket connection established');
+        };
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            console.log('Message received:', data.message);
+            const chatLog = document.querySelector('#chat-log');
+            chatLog.innerHTML += ('<div>' + data.message + '</div>');
+        };
+
+        chatSocket.onclose = function (e) {
+            console.error('WebSocket connection closed unexpectedly');
+        };
+
+        chatSocket.onerror = function (e) {
+            console.error('WebSocket error observed:', e);
+        };
+
+        // Event listener for the "Send" button
+        document.querySelector('#chat-message-send').onclick = function (e) {
+            console.log('Send button clicked');  // Debugging log
+            const inputElement = document.querySelector('#chat-message-input');
+            const message = inputElement.value;
+
+            if (message.trim() !== "") {
+                chatSocket.send(JSON.stringify({
+                    'message': message
+                }));
+                inputElement.value = '';
+            }
+        };
+    </script>
+</body>
+</html>

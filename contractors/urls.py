@@ -1,0 +1,40 @@
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view
+from django.contrib import admin
+from .views import register
+from .views import QuizSubmitView, MessageViewSet, admin_dashboard
+from . import views
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/', include('contractors.urls')),  # Include URLs from the contractors app
+    path('register/', register, name='register'),  # Registration endpoint
+    path('api/quiz/submit/', QuizSubmitView.as_view(), name='quiz-submit'),
+    path('admin/dashboard/', admin_dashboard, name='admin_dashboard'),
+    path('test/', views.test_view, name='test'),
+    
+]
+# Set up a router to automatically generate URL patterns for the viewsets
+router = DefaultRouter()
+router.register(r'contractors', ContractorViewSet)
+router.register(r'contracts', ContractViewSet)
+router.register(r'clients', ClientViewSet)
+router.register(r'invoices', InvoiceViewSet)
+router.register(r'payments', PaymentViewSet)
+router.register(r'messages', MessageViewSet, basename='message')
+
+
+urlpatterns = [
+    path('', include(router.urls)),  # Include the router-generated URLs
+    path('chat/<str:room_name>/', views.room, name='room'),
+    path('api/register/', register_user, name='register_user'),
+    path('api/login/', views.login_view, name='login'),
+    path('api/user-profile/', views.user_profile, name='user_profile'),
+    path('api/csrf_token/', csrf_token_view),
+]
+
+
