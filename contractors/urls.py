@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view
+from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info
 from django.contrib import admin
 from .views import register
 from .views import QuizSubmitView, MessageViewSet, admin_dashboard
@@ -33,8 +33,8 @@ urlpatterns = [
     path('chat/<str:room_name>/', views.room, name='room'),
     path('api/register/', register_user, name='register_user'),
     path('api/login/', views.login_view, name='login'),
-    path('api/user-profile/', views.user_profile, name='user_profile'),
     path('api/csrf_token/', csrf_token_view),
+    path('api/user-info/', get_user_info, name='user-info'),
 ]
 
 

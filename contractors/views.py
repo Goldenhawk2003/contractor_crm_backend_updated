@@ -2,7 +2,6 @@ from django.shortcuts import render
 from rest_framework import viewsets, permissions
 from .models import Contractor, Contract, Client, Invoice, Payment, Message
 from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer
-from django.shortcuts import render
 from .models import FormResponse, Quiz
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
@@ -24,6 +23,12 @@ from django.contrib.auth import authenticate, login
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
+from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+
+
 
 
 # Function to suggest a contractor based on the client's answer
@@ -260,30 +265,32 @@ def register_user(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
+    """Handles login"""
     username = request.data.get('username')
     password = request.data.get('password')
 
-    # Authenticate user
-    user = authenticate(username=username, password=password)
+    user = authenticate(request, username=username, password=password)
+
     if user is not None:
-        login(request, user)  # Django handles the session creation
-        return Response({"message": "Login successful!"}, status=200)
+        login(request, user)  # Logs the user in by creating a session
+        return JsonResponse({"message": "Login successful"})
     else:
-        return Response({"error": "Invalid credentials"}, status=400)
+        return JsonResponse({"error": "Invalid username or password"}, status=400)
 
+@login_required  # Ensures only authenticated users can access this view
+def get_user_info(request):
+    # Access the logged-in user
+    user = request.user
 
-@api_view(['GET'])
-def user_profile(request):
-    """Get user profile details."""
-    user = request.user  # This will get the logged-in user
-    user_data = {
+    # Return some user information in the response
+    return JsonResponse({
         'username': user.username,
         'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
-    }
-    return Response(user_data)
+    })
 
 
 def csrf_token_view(request):

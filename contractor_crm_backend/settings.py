@@ -40,7 +40,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
 CSRF_COOKIE_NAME = 'csrftoken'
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
@@ -79,6 +80,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = False 
 
 ROOT_URLCONF = 'contractor_crm_backend.urls'
 
@@ -161,9 +164,11 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-
+BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+ # Adjust this based on where you placed your React build files
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -207,3 +212,7 @@ CHANNEL_LAYERS = {
 }
 
 
+SESSION_COOKIE_AGE = 1209600  # Two weeks in seconds (2 weeks)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+LOGIN_REDIRECT_URL = '/home/'
