@@ -21,6 +21,18 @@ class ClientAdmin(admin.ModelAdmin):
         else:
             self.message_user(request, "A valid User must be selected for a Client.", level='error')
 
+
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ['question', 'question_type']
+    search_fields = ['question']
+    list_filter = ['question_type']
+
+
+class FormResponseAdmin(admin.ModelAdmin):
+    list_display = ['client', 'quiz', 'answer', 'selected_choice', 'created_at']
+    search_fields = ['client__username', 'quiz__question']
+    list_filter = ['created_at']
+
 admin.site.register(Client, ClientAdmin)
 admin.site.register(User)
 admin.site.register(Contractor)

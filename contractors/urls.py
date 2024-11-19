@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info
+from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response
 from django.contrib import admin
 from .views import register
 from .views import QuizSubmitView, MessageViewSet, admin_dashboard
@@ -35,6 +35,9 @@ urlpatterns = [
     path('api/login/', views.login_view, name='login'),
     path('api/csrf_token/', csrf_token_view),
     path('api/user-info/', get_user_info, name='user-info'),
+    path('api/quiz/questions/', get_quiz_questions, name='quiz-questions'),
+    path('api/quiz/submit/', submit_quiz_response, name='quiz-submit'),
 ]
+
 
 

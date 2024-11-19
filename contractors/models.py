@@ -74,23 +74,35 @@ class Review(models.Model):
         super(Review, self).save(*args, **kwargs)
 
 class Quiz(models.Model):
-
+    QUESTION_TYPES = [
+        ('text', 'Text Answer'),  # Open-ended text-based question
+        ('multiple_choice', 'Multiple Choice'),
+    ]
     question = models.CharField(max_length=255)  # Question text
     description = models.TextField(blank=True, null=True)  # Optional description for the question
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='text')  # Text or Multiple Choice
+    choices = models.JSONField(blank=True, null=True)  # Stores multiple-choice options as a JSON array
 
     def __str__(self):
         return self.question
+
+    def is_multiple_choice(self):
+        """Check if the question is multiple-choice."""
+        return self.question_type == 'multiple_choice'
     
 
 class FormResponse(models.Model):
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='form_responses')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='responses')
-    answer = models.CharField(max_length=255)  # Client's answer
-    contractor_suggestion = models.ForeignKey(Contractor, on_delete=models.SET_NULL, null=True, blank=True)
+    answer = models.CharField(max_length=255, blank=True, null=True)  # Client's answer for text-based questions
+    selected_choice = models.CharField(max_length=255, blank=True, null=True)  # For multiple-choice questions
+    contractor_suggestion = models.ForeignKey('Contractor', on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when the response was created
 
     def __str__(self):
-        return f"Response by {self.client.username} for {self.quiz.question}"
+        if self.selected_choice:
+            return f"{self.client.username} selected '{self.selected_choice}' for '{self.quiz.question}'"
+        return f"{self.client.username} answered '{self.answer}' for '{self.quiz.question}'"
     
 class Invoice(models.Model):
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name='invoices')

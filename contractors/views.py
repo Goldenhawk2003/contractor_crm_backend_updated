@@ -28,6 +28,10 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 import logging
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+import json
+from django.contrib.auth.decorators import user_passes_test
 
 
 
@@ -60,6 +64,49 @@ def submit_quiz_response(request):
         return render(request, 'quiz_result.html', {'form_response': form_response})
 
     return render(request, 'quiz.html') # Assuming you have a quiz form template
+
+
+def get_quiz_questions(request):
+    if request.method == 'GET':
+        questions = Quiz.objects.all()
+        question_list = []
+
+        for question in questions:
+            question_data = {
+                "id": question.id,
+                "text": question.question,
+                "type": question.question_type,
+                "description": question.description,
+            }
+            if question.question_type == "multiple_choice":
+                question_data["choices"] = question.choices
+
+            question_list.append(question_data)
+
+        return JsonResponse({"questions": question_list}, safe=False)
+
+@csrf_exempt
+@login_required
+def submit_quiz_response(request):
+    if request.method == 'POST':
+        # Parse request data
+        data = json.loads(request.body)
+        quiz_id = data.get('quiz_id')
+        answer = data.get('answer')
+
+        # Validate input
+        quiz = get_object_or_404(Quiz, id=quiz_id)
+
+        # Save response
+        FormResponse.objects.create(
+            client=request.user,  # Ensure the user is authenticated
+            quiz=quiz,
+            answer=answer,
+        )
+
+        return JsonResponse({"message": "Response submitted successfully!"}, status=201)
+
+    return JsonResponse({"error": "Invalid request method"}, status=400)
 
 # ViewSet for Contractors
 @permission_classes([AllowAny])
@@ -215,6 +262,8 @@ def log_activity(user, action, target_object=None, details=None):
     )
 
 @api_view(['GET'])
+@login_required
+@user_passes_test(lambda u: u.is_superuser) 
 def admin_dashboard(request):
     total_contractors = Contractor.objects.count()
     total_clients = Client.objects.count()
@@ -222,7 +271,7 @@ def admin_dashboard(request):
     paid_invoices = Invoice.objects.filter(status='paid').count()
     
     # Fetch form responses for the logged-in user
-    form_responses = FormResponse.objects.filter(user=request.user)
+    form_responses = FormResponse.objects.filter(client=request.user)
     
     # Return data to frontend
     return Response({
@@ -314,7 +363,6 @@ def register_user(request):
 
 
 @api_view(['POST'])
-#@permission_classes([AllowAny])
 def login_view(request):
     """Handles login"""
     username = request.data.get('username')
