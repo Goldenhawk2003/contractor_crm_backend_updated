@@ -27,6 +27,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+import logging
 
 
 
@@ -237,35 +238,82 @@ def admin_dashboard(request):
 User = get_user_model()
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  
+@permission_classes([AllowAny])
 def register_user(request):
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"Received data: {request.data}")
+
+    # Validate required fields
+    required_fields = ['username', 'email', 'password', 'role']
+    missing_fields = [field for field in required_fields if not request.data.get(field)]
+    
+    if missing_fields:
+        return Response(
+            {"error": f"Missing fields: {', '.join(missing_fields)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    username = request.data.get('username')
     email = request.data.get('email')
     password = request.data.get('password')
-    role = request.data.get('role')  # either 'client' or 'professional'
+    confirm_password = request.data.get('confirmPassword', None)
+    role = request.data.get('role')
+    job_type = request.data.get('job_type', None) 
+    print(f"Job Type: {job_type}") # Default to None if not provided
 
+    # Validate passwords match
+    if confirm_password and password != confirm_password:
+        return Response({"error": "Passwords do not match"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validate role
     if role not in ['client', 'professional']:
         return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
 
-    user = User.objects.create_user(
-        username=request.data.get('username'),
-        email=email,
-        password=password,
-        user_type=role  # Custom field in your User model
-    )
-    user.save()
+    # Validate job_type for professionals
+    if role == 'professional' and not job_type:
+        return Response(
+            {"error": "Job type is required for professionals"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
+    try:
+        # Check for duplicate username or email
+        if User.objects.filter(username__iexact=username).exists():
+            return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email__iexact=email).exists():
+            return Response({"error": "Email already in use"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if user.user_type == 'professional':
-            Contractor.objects.create(user=user)  # Assuming you have a foreign key to User in Contractor
-    if user.user_type == 'client':
-            Client.objects.create(user=user) 
-    return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+        # Create the user
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            user_type=role
+        )
 
+        # Create role-specific data
+        if role == 'professional':
+            Contractor.objects.create(user=user, job_type=job_type)
+        elif role == 'client':
+            Client.objects.create(user=user)
 
+        logger.info(f"User {username} registered successfully")
+        return Response(
+            {"message": "User registered successfully", "id": user.id, "role": user.user_type},
+            status=status.HTTP_201_CREATED
+        )
+
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return Response(
+            {"error": "An unexpected error occurred"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+#@permission_classes([AllowAny])
 def login_view(request):
     """Handles login"""
     username = request.data.get('username')
