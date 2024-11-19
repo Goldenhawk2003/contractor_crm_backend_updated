@@ -22,19 +22,3 @@ def send_invoice_reminders():
 
 
 
-"""
-
-QUIZ QUESTIONS
-
-house type: semi, condo
-
-what is the issue?
-
-price range
-
-
-
-
-
-
-"""

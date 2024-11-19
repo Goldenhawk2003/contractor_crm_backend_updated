@@ -62,10 +62,11 @@ def submit_quiz_response(request):
     return render(request, 'quiz.html') # Assuming you have a quiz form template
 
 # ViewSet for Contractors
+@permission_classes([AllowAny])
 class ContractorViewSet(viewsets.ModelViewSet):
-    queryset = Contractor.objects.all().order_by('id')
+    queryset = Contractor.objects.all().order_by('job_type')
     serializer_class = ContractorSerializer
-    permission_classes = [IsAuthenticated, IsContractorOrReadOnly, IsAdminUser]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, SearchFilter]  # Enable filtering
     filterset_fields = ['job_type'] 
     search_field = ['name', 'job_type']
