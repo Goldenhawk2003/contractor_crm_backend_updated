@@ -5,6 +5,7 @@ from .models import Contractor, Contract, Client, Invoice, Payment, Message
 # Serializer for Contractor model
 class ContractorSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username') 
+    
     class Meta:
         model = Contractor
         fields = '__all__'  # This will include all fields from the Contractor model
