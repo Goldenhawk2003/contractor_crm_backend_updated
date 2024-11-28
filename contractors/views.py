@@ -32,6 +32,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 import json
 from django.contrib.auth.decorators import user_passes_test
+from rest_framework.generics import RetrieveAPIView
 
 
 
@@ -383,10 +384,12 @@ def get_user_info(request):
 
     # Return some user information in the response
     return JsonResponse({
+        'id': user.id,
         'username': user.username,
         'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
+        'type': user.user_type
     })
 
 
@@ -394,3 +397,14 @@ def csrf_token_view(request):
     # Generates a new CSRF token for the client
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
+
+@permission_classes([AllowAny])
+class ContractorByUserView(RetrieveAPIView):
+    queryset = Contractor.objects.all()
+    serializer_class = ContractorSerializer
+    permission_classes = [AllowAny]
+
+    def get_object(self):
+        user_id = self.kwargs['user_id']
+        return Contractor.objects.get(user_id=user_id)
+    

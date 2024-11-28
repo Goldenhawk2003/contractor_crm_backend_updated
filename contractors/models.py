@@ -26,6 +26,8 @@ class Contractor(models.Model):
     experience_years = models.IntegerField(default=0)
     rating = models.FloatField(default=0)
     profile_description = models.TextField(blank=True, null=True)
+    picture = models.ImageField(upload_to='contractor_pictures/', blank=True, null=True)  # Optional picture
+    location = models.CharField(max_length=255, blank=True, null=True)  # Optional location
 
     
     def __str__(self):

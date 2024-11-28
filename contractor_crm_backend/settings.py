@@ -219,3 +219,6 @@ SESSION_COOKIE_AGE = 1209600  # Two weeks in seconds (2 weeks)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 LOGIN_REDIRECT_URL = '/home/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

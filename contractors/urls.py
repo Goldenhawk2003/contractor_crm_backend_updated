@@ -1,11 +1,13 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response
+from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView
 from django.contrib import admin
 from .views import register
 from .views import QuizSubmitView, MessageViewSet, admin_dashboard
 from . import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 
@@ -28,6 +30,7 @@ router.register(r'payments', PaymentViewSet)
 router.register(r'messages', MessageViewSet, basename='message')
 
 
+
 urlpatterns = [
     path('', include(router.urls)),  # Include the router-generated URLs
     path('chat/<str:room_name>/', views.room, name='room'),
@@ -37,7 +40,9 @@ urlpatterns = [
     path('api/user-info/', get_user_info, name='user-info'),
     path('api/quiz/questions/', get_quiz_questions, name='quiz-questions'),
     path('api/quiz/submit/', submit_quiz_response, name='quiz-submit'),
+    path('api/contractors/by-user/<int:user_id>/', ContractorByUserView.as_view(), name='contractor-by-user'),
 ]
 
 
-
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
