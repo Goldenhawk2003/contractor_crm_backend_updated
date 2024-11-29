@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Contractor, Contract, Client, Invoice, Payment, Message
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation
 
 
 # Serializer for Contractor model
@@ -38,12 +38,15 @@ class PaymentSerializer(serializers.ModelSerializer):
     
 
 class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source="sender.username", read_only=True)
+
     class Meta:
         model = Message
-        fields = ['id', 'sender', 'receiver', 'message', 'timestamp']
+        fields = ['id', 'conversation', 'sender', 'sender_name', 'content', 'timestamp']
 
-    # You may want to add some custom validation to ensure users can only message each other if certain conditions apply
-    def validate(self, data):
-        if data['sender'] == data['receiver']:
-            raise serializers.ValidationError("You cannot send a message to yourself.")
-        return data
+class ConversationSerializer(serializers.ModelSerializer):
+    messages = MessageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Conversation
+        fields = ['id', 'client', 'contractor', 'messages', 'created_at']

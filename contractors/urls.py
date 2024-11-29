@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView
+from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView, ConversationViewSet, MarkAsReadView
 from django.contrib import admin
 from .views import register
 from .views import QuizSubmitView, MessageViewSet, admin_dashboard
@@ -27,13 +27,13 @@ router.register(r'contracts', ContractViewSet)
 router.register(r'clients', ClientViewSet)
 router.register(r'invoices', InvoiceViewSet)
 router.register(r'payments', PaymentViewSet)
+router.register(r'conversations', ConversationViewSet, basename='conversation')
 router.register(r'messages', MessageViewSet, basename='message')
 
 
 
 urlpatterns = [
     path('', include(router.urls)),  # Include the router-generated URLs
-    path('chat/<str:room_name>/', views.room, name='room'),
     path('api/register/', register_user, name='register_user'),
     path('api/login/', views.login_view, name='login'),
     path('api/csrf_token/', csrf_token_view),
@@ -41,6 +41,7 @@ urlpatterns = [
     path('api/quiz/questions/', get_quiz_questions, name='quiz-questions'),
     path('api/quiz/submit/', submit_quiz_response, name='quiz-submit'),
     path('api/contractors/by-user/<int:user_id>/', ContractorByUserView.as_view(), name='contractor-by-user'),
+    path('conversations/<int:conversation_id>/mark-as-read/', MarkAsReadView.as_view(), name='mark_as_read'),
 ]
 
 
