@@ -229,69 +229,8 @@ class QuizSubmitView(APIView):
         serializer = ContractorSerializer(matched_contractors, many=True)
         return Response(serializer.data)
     
-class ConversationViewSet(viewsets.ModelViewSet):
-    queryset = Conversation.objects.all()
-    serializer_class = ConversationSerializer
-    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        return (
-            Conversation.objects.filter(client=user)
-            | Conversation.objects.filter(contractor=user)
-        ).annotate(last_message=Max("messages__timestamp")).order_by("-last_message")
 
-    def create(self, request, *args, **kwargs):
-        client = request.user
-        contractor_id = request.data.get("contractor")
-
-        try:
-            contractor = User.objects.get(id=contractor_id, user_type="contractor")
-
-            # Check if a conversation already exists
-            conversation, created = Conversation.objects.get_or_create(client=client, contractor=contractor)
-            if not created:
-                return Response({"error": "Conversation already exists."}, status=400)
-
-            return Response(ConversationSerializer(conversation).data)
-        except User.DoesNotExist:
-            return Response({"error": "Contractor not found."}, status=404)
-class MessageViewSet(viewsets.ModelViewSet):
-    queryset = Message.objects.all()
-    serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticated]
-
-    def create(self, request, *args, **kwargs):
-        sender = request.user
-        conversation_id = request.data.get("conversation")
-        content = request.data.get("content")
-
-        try:
-            conversation = Conversation.objects.get(id=conversation_id)
-            if sender not in [conversation.client, conversation.contractor]:
-                return Response({"error": "You are not part of this conversation."}, status=403)
-
-            message = Message.objects.create(conversation=conversation, sender=sender, content=content)
-            return Response(MessageSerializer(message).data)
-        except Conversation.DoesNotExist:
-            return Response({"error": "Conversation not found."}, status=404)
-
-class MarkAsReadView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        conversation_id = kwargs.get("conversation_id")
-        try:
-            conversation = Conversation.objects.get(id=conversation_id)
-
-            if request.user not in [conversation.client, conversation.contractor]:
-                return Response({"error": "You are not part of this conversation."}, status=403)
-
-            # Mark all unread messages as read
-            Message.objects.filter(conversation=conversation, read=False).exclude(sender=request.user).update(read=True)
-            return Response({"message": "Messages marked as read."})
-        except Conversation.DoesNotExist:
-            return Response({"error": "Conversation not found."}, status=404)
 
 def test_view(request):
     return render(request, 'test.html', {})
@@ -451,4 +390,3 @@ class ContractorByUserView(RetrieveAPIView):
         return Contractor.objects.get(user_id=user_id)
     
 
-    

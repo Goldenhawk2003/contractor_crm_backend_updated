@@ -41,7 +41,6 @@ urlpatterns = [
     path('api/quiz/questions/', get_quiz_questions, name='quiz-questions'),
     path('api/quiz/submit/', submit_quiz_response, name='quiz-submit'),
     path('api/contractors/by-user/<int:user_id>/', ContractorByUserView.as_view(), name='contractor-by-user'),
-    path('conversations/<int:conversation_id>/mark-as-read/', MarkAsReadView.as_view(), name='mark_as_read'),
 ]
 
 
