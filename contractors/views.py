@@ -33,6 +33,7 @@ from django.http import JsonResponse
 import json
 from django.contrib.auth.decorators import user_passes_test
 from rest_framework.generics import RetrieveAPIView
+from django.utils.decorators import method_decorator
 
 
 
@@ -390,3 +391,54 @@ class ContractorByUserView(RetrieveAPIView):
         return Contractor.objects.get(user_id=user_id)
     
 
+
+class ConversationListView(APIView):
+    def get(self, request):
+        user = request.user
+        conversations = Conversation.objects.filter(participants=request.user)
+        serializer = ConversationSerializer(conversations, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class MessageListView(APIView):
+    def get(self, request, conversation_id):
+        try:
+            conversation = Conversation.objects.get(id=conversation_id, participants=request.user)
+            serializer = MessageSerializer(conversation.messages.all(), many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Conversation.DoesNotExist:
+            return Response({"error": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND)
+
+@method_decorator(csrf_exempt, name="dispatch")
+class CreateMessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        sender = request.user
+        recipient_id = request.data.get("recipient_id")
+        content = request.data.get("content")
+
+        if not recipient_id or not content:
+            return Response({"error": "Recipient and content are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            recipient = User.objects.get(id=recipient_id)
+        except User.DoesNotExist:
+            return Response({"error": "Recipient not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if a conversation exists
+        conversation = Conversation.objects.filter(participants=sender).filter(participants=recipient).first()
+
+        # If no conversation exists, create a new one
+        if not conversation:
+            conversation = Conversation.objects.create()
+            conversation.participants.set([sender, recipient])  # Assign participants
+
+        # Create the message
+        message = Message.objects.create(
+            conversation=conversation,
+            sender=sender,
+            content=content,
+        )
+
+        serializer = MessageSerializer(message)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

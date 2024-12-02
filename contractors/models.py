@@ -207,3 +207,17 @@ class CustomOutstandingToken(OutstandingToken):
     my_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     class Meta:
         abstract = True
+
+
+
+class Conversation(models.Model):
+    participants = models.ManyToManyField(User)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class Message(models.Model):
+    conversation = models.ForeignKey(
+        Conversation, related_name="messages", on_delete=models.CASCADE
+    )
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)

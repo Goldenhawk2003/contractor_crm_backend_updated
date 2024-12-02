@@ -43,3 +43,26 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['id', 'conversation', 'sender', 'sender_name', 'content', 'timestamp']
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source="sender.username", read_only=True)
+
+    class Meta:
+        model = Message
+        fields = ['id', 'sender', 'sender_name', 'content', 'timestamp']
+
+class ConversationSerializer(serializers.ModelSerializer):
+    participants = serializers.SerializerMethodField()
+    latest_message = serializers.SerializerMethodField("get_latest_message")
+
+    class Meta:
+        model = Conversation
+        fields = ["id", "participants", "latest_message"]
+
+    def get_participants(self, obj):
+        return [user.username for user in obj.participants.all()]
+
+    def get_latest_message(self, obj):
+        last_message = obj.messages.last()  # Retrieve the most recent message
+        return last_message.content if last_message else "No messages yet."
