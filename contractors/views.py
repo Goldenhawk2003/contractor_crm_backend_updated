@@ -37,7 +37,7 @@ import base64
 import requests
 from urllib.parse import urlencode
 from docusign_esign import ApiClient, EnvelopesApi, EnvelopeDefinition, Document, Signer, Tabs, SignHere
-
+from django.core.mail import send_mail
 
 
 
@@ -539,3 +539,51 @@ def get_envelope_status(request, envelope_id):
     envelopes_api = EnvelopesApi(api_client)
     status = envelopes_api.get_envelope(account_id="31467551", envelope_id=envelope_id)
     return JsonResponse({"status": status.status})
+
+@method_decorator(csrf_exempt, name='dispatch')  # Disable CSRF for this view
+class ContactView(APIView):
+    permission_classes = [AllowAny]  # Ensure the endpoint is publicly accessible
+
+    def post(self, request):
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+        message = request.data.get('message')
+        role = request.data.get('role')
+
+        # Validate required fields
+        if not (first_name and last_name and email and message and role):
+            return Response(
+                {"error": "All fields are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Compose the email
+        subject = f"New Contact Us Submission from {first_name} {last_name}"
+        body = f"""
+        Name: {first_name} {last_name}
+        Email: {email}
+        Role: {role}
+
+        Message:
+        {message}
+        """
+        try:
+            send_mail(
+                subject,
+                body,
+                'your-email@example.com',  # Replace with your "from" email address
+                ['info@elitecraftcontractors.com'],  # Replace with the recipient email
+                fail_silently=False,
+            )
+            return Response(
+                {"success": "Your message has been sent successfully!"},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            # Log the exception and return a user-friendly error
+            print(f"Email sending failed: {str(e)}")
+            return Response(
+                {"error": "Failed to send email. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
