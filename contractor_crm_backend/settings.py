@@ -231,3 +231,19 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'ammarogeil@gmail.com'  # Your email address
 EMAIL_HOST_PASSWORD = 'fchg qwmy agvt klxa'  # Your email password
+
+
+DOCUSIGN_AUTH_URL = "https://account-d.docusign.com/oauth/auth"
+TOKEN_URL = "https://account-d.docusign.com/oauth/token"
+DOCUSIGN_BASE_PATH = "https://demo.docusign.net/restapi"  # Use production URL in production
+CLIENT_ID = "a0769e40-cd97-4e92-a79b-8021247aeaf3"
+CLIENT_SECRET = "0f55b6ae-77d3-4271-b58c-8a757095da53"
+REDIRECT_URI = "http://localhost:8000/docusign/callback"
+
+DOCUSIGN = {
+    "INTEGRATION_KEY": "a0769e40-cd97-4e92-a79b-8021247aeaf3",
+    "USER_ID": "31467551",
+    "PRIVATE_KEY": "0f55b6ae-77d3-4271-b58c-8a757095da53",
+    "BASE_PATH": "http://localhost:8000/docusign/callback",  # Sandbox
+    "ACCOUNT_ID": "31467551",
+}

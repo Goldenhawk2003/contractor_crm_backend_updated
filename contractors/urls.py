@@ -42,10 +42,9 @@ urlpatterns = [
     path("api/conversations/", ConversationListView.as_view(), name="conversation-list"),
     path("api/conversations/<int:conversation_id>/messages/", MessageListView.as_view(), name="message-list"),
     path("api/messages/", CreateMessageView.as_view(), name="create-message"),
-    path("docusign/login/", views.docusign_login, name="docusign_login"),
-    path("docusign/callback/", views.docusign_callback, name="docusign_callback"),
-    path("docusign/send/", views.send_contract, name="send_contract"),
-    path("docusign/status/<str:envelope_id>/", views.get_envelope_status, name="get_envelope_status"),
+    path("docusign/login/", views.get_docusign_client, name="docusign_login"),
+    path('api/send-contract/', views.send_contract, name='send-contract'),
+    path("docusign/status/<str:envelope_id>/", views.get_contract_status, name="get_envelope_status"),
     path('contact/', ContactView.as_view(), name='contact'),
 ]
 

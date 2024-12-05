@@ -36,9 +36,9 @@ from django.utils.decorators import method_decorator
 import base64
 import requests
 from urllib.parse import urlencode
-from docusign_esign import ApiClient, EnvelopesApi, EnvelopeDefinition, Document, Signer, Tabs, SignHere
+from docusign_esign import ApiClient, EnvelopesApi, EnvelopeDefinition, Document, Signer, Tabs, SignHere, RecipientViewRequest, Recipients
 from django.core.mail import send_mail
-
+from contractor_crm_backend import settings
 
 
 
@@ -447,98 +447,7 @@ class CreateMessageView(APIView):
         serializer = MessageSerializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-DOCUSIGN_AUTH_URL = "https://account-d.docusign.com/oauth/auth"
-TOKEN_URL = "https://account-d.docusign.com/oauth/token"
-CLIENT_ID = "a0769e40-cd97-4e92-a79b-8021247aeaf3"
-CLIENT_SECRET = "0f55b6ae-77d3-4271-b58c-8a757095da53"
-REDIRECT_URI = "http://yourcrm.com/docusign/callback"
 
-
-def docusign_login(request):
-    params = {
-        "response_type": "code",
-        "scope": "signature",
-        "client_id": CLIENT_ID,
-        "redirect_uri": REDIRECT_URI,
-    }
-    return redirect(f"{DOCUSIGN_AUTH_URL}?{urlencode(params)}")
-
-def docusign_callback(request):
-    code = request.GET.get("code")
-    if not code:
-        return JsonResponse({"error": "No code provided"}, status=400)
-
-    payload = {
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": REDIRECT_URI,
-    }
-    auth_header = f"{CLIENT_ID}:{CLIENT_SECRET}".encode("utf-8")
-    headers = {"Authorization": f"Basic {base64.b64encode(auth_header).decode()}"}
-    response = requests.post(TOKEN_URL, data=payload, headers=headers)
-
-    if response.status_code == 200:
-        access_token = response.json()["access_token"]
-        request.session["docusign_token"] = access_token
-        return JsonResponse({"message": "Authenticated successfully"})
-    return JsonResponse({"error": response.json()}, status=response.status_code)
-
-
-def send_contract(request, document_path, signer_email, signer_name):
-    access_token = request.session.get("docusign_token")
-    if not access_token:
-        return JsonResponse({"error": "User not authenticated"}, status=401)
-
-    # Setup API client
-    api_client = ApiClient()
-    api_client.set_base_path("https://demo.docusign.net/restapi")
-    api_client.set_default_header("Authorization", f"Bearer {access_token}")
-
-    # Create envelope definition
-    with open(document_path, "rb") as file:
-        doc_bytes = file.read()
-
-    document = Document(
-        document_base64=base64.b64encode(doc_bytes).decode("utf-8"),
-        name="Contract",
-        file_extension="pdf",
-        document_id="1",
-    )
-
-    signer = Signer(
-        email=signer_email,
-        name=signer_name,
-        recipient_id="1",
-        routing_order="1",
-    )
-
-    sign_here = SignHere(anchor_string="/sig/", anchor_units="pixels", anchor_x_offset="20", anchor_y_offset="10")
-    signer.tabs = Tabs(sign_here_tabs=[sign_here])
-
-    envelope_definition = EnvelopeDefinition(
-        email_subject="Please sign this contract",
-        documents=[document],
-        recipients={"signers": [signer]},
-        status="sent",
-    )
-
-    envelopes_api = EnvelopesApi(api_client)
-    envelope_summary = envelopes_api.create_envelope(account_id="31467551", envelope_definition=envelope_definition)
-
-    return JsonResponse({"envelopeId": envelope_summary.envelope_id})
-
-def get_envelope_status(request, envelope_id):
-    access_token = request.session.get("docusign_token")
-    if not access_token:
-        return JsonResponse({"error": "User not authenticated"}, status=401)
-
-    api_client = ApiClient()
-    api_client.set_base_path("https://demo.docusign.net/restapi")
-    api_client.set_default_header("Authorization", f"Bearer {access_token}")
-
-    envelopes_api = EnvelopesApi(api_client)
-    status = envelopes_api.get_envelope(account_id="31467551", envelope_id=envelope_id)
-    return JsonResponse({"status": status.status})
 
 @method_decorator(csrf_exempt, name='dispatch')  # Disable CSRF for this view
 class ContactView(APIView):
@@ -587,3 +496,88 @@ class ContactView(APIView):
                 {"error": "Failed to send email. Please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+def get_docusign_client():
+    client = ApiClient()
+    client.set_oauth_base_path(settings.DOCUSIGN["BASE_PATH"])
+    access_token = client.request_jwt_user_token(
+        client_id=settings.DOCUSIGN["INTEGRATION_KEY"],
+        user_id=settings.DOCUSIGN["USER_ID"],
+        oauth_host_name=settings.DOCUSIGN["BASE_PATH"],
+        private_key_path=settings.DOCUSIGN["PRIVATE_KEY"],
+        expires_in=3600,
+    )
+    client.set_default_header("Authorization", f"Bearer {access_token.access_token}")
+    return client
+@csrf_exempt
+def send_contract(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            email = data.get("email")
+            name = data.get("name")
+            contract_content = data.get("contractContent")
+
+            if not email or not name or not contract_content:
+                return JsonResponse({"error": "Missing required fields."}, status=400)
+
+            # Initialize DocuSign API Client
+            api_client = ApiClient()
+            api_client.host = "https://demo.docusign.net/restapi"  # Use demo environment
+            api_client.set_default_header("Authorization", "Bearer YOUR_ACCESS_TOKEN")
+
+            # Create Document
+            document = Document(
+                document_base64=base64.b64encode(contract_content.encode()).decode(),
+                name="Contract",
+                file_extension="txt",
+                document_id="1"
+            )
+
+            # Create Signer
+            signer = Signer(
+                email=email,
+                name=name,
+                recipient_id="1",
+                routing_order="1"
+            )
+
+            # Create SignHere Tab
+            sign_here = SignHere(
+                anchor_string="/sn1/",
+                anchor_units="pixels",
+                anchor_x_offset="20",
+                anchor_y_offset="10"
+            )
+
+            # Add Tabs to Signer
+            signer.tabs = Tabs(sign_here_tabs=[sign_here])
+
+            # Create Recipients
+            recipients = Recipients(signers=[signer])
+
+            # Create Envelope Definition
+            envelope_definition = EnvelopeDefinition(
+                email_subject="Please sign this contract",
+                documents=[document],
+                recipients=recipients,
+                status="sent"
+            )
+
+            # Send Envelope
+            envelopes_api = EnvelopesApi(api_client)
+            results = envelopes_api.create_envelope(account_id="31467551", envelope_definition=envelope_definition)
+
+            return JsonResponse({"envelopeId": results.envelope_id}, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+def get_contract_status(envelope_id):
+    client = get_docusign_client()
+    envelopes_api = EnvelopesApi(client)
+    envelope = envelopes_api.get_envelope(account_id=settings.DOCUSIGN["31467551"], envelope_id=envelope_id)
+    return envelope.status
