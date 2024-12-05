@@ -46,6 +46,8 @@ urlpatterns = [
     path('api/send-contract/', views.send_contract, name='send-contract'),
     path("docusign/status/<str:envelope_id>/", views.get_contract_status, name="get_envelope_status"),
     path('contact/', ContactView.as_view(), name='contact'),
+    path("api/sign-contract/", views.sign_contract, name="sign-contract"),
+    path("api/user-consents/", views.get_user_consents, name="user-consents"),
 ]
 
 

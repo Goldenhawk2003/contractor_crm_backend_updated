@@ -221,3 +221,14 @@ class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+
+
+
+class ContractConsent(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    contract_id = models.IntegerField()  # Assuming each contract has a unique ID
+    consent_given = models.BooleanField(default=False)
+    signed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Consent by {self.user.username} for Contract {self.contract_id}"

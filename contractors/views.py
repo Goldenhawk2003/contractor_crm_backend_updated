@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent
 from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer
 from .models import FormResponse, Quiz
 from rest_framework.permissions import IsAuthenticated
@@ -581,3 +581,46 @@ def get_contract_status(envelope_id):
     envelopes_api = EnvelopesApi(client)
     envelope = envelopes_api.get_envelope(account_id=settings.DOCUSIGN["31467551"], envelope_id=envelope_id)
     return envelope.status
+
+
+@login_required  # Ensure the user is authenticated
+def sign_contract(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            contract_id = data.get("contractId")
+            consent = data.get("consent")
+
+            if not contract_id or consent is None:
+                return JsonResponse({"error": "Invalid input."}, status=400)
+
+            # Use the authenticated user from the request
+            user = request.user
+
+            # Prevent duplicate consents
+            if ContractConsent.objects.filter(user=user, contract_id=contract_id).exists():
+                return JsonResponse({"message": "Contract already signed."}, status=200)
+
+            # Save the consent
+            ContractConsent.objects.create(
+                user=user,
+                contract_id=contract_id,
+                consent_given=consent,
+            )
+
+            return JsonResponse({"message": "Contract signed successfully."}, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON payload."}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+@login_required
+def get_user_consents(request):
+    user = request.user
+    consents = ContractConsent.objects.filter(user=user, consent_given=True).values(
+        "contract_id", "signed_at"
+    )
+    return JsonResponse({"consents": list(consents)}, status=200)
