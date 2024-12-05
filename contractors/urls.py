@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView, ConversationListView, MessageListView, CreateMessageView, ContactView
+from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView, ConversationListView, MessageListView, CreateMessageView, ContactView, stripe_webhook, create_payment_intent, create_invoice
 from django.contrib import admin
 from .views import register
 from .views import QuizSubmitView, admin_dashboard
@@ -48,6 +48,11 @@ urlpatterns = [
     path('contact/', ContactView.as_view(), name='contact'),
     path("api/sign-contract/", views.sign_contract, name="sign-contract"),
     path("api/user-consents/", views.get_user_consents, name="user-consents"),
+    path('stripe-webhook/', stripe_webhook, name='stripe_webhook'),
+    path('create-payment-intent/', create_payment_intent, name='create_payment_intent'),
+    path('create-invoice/', create_invoice, name='create-invoice'),
+    path("api/users/search/", views.search_users, name="search_users"),
+    path("api/conversations/<int:conversation_id>/reply/", views.reply_to_conversation, name="reply_to_conversation"),
 ]
 
 

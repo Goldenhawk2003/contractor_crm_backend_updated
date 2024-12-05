@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-&dse1c2s@8zio8t5^)lsy$af^*8(+#@h^#eptk^e3xva=#xqk*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app']
 
 
 AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where User is defined
@@ -247,3 +247,11 @@ DOCUSIGN = {
     "BASE_PATH": "http://localhost:8000/docusign/callback",  # Sandbox
     "ACCOUNT_ID": "31467551",
 }
+
+STRIPE_SECRET_KEY = 'sk_test_51QSiGBF7wkMLsTtpa5iRWHQjKTh3EhBrCJMHnqlDaGNVgN7lUx8SYXHgwowaqGRMFwRenqjm1lF0dWQdKw6BiI3V00UNbrSWcd'
+STRIPE_PUBLISHABLE_KEY = 'pk_test_51QSiGBF7wkMLsTtpBBzTCQOPHg8otgHraZEnvAO7Tqv1U6vdERKvFIjAfdykTzcZqE8z50u7N69Qspz4Sk4gpbvm00bGltNgjo'
+
+
+CSP_STYLE_SRC = ["'self'", "'unsafe-inline'", "https://*.stripe.com"]
+CSP_SCRIPT_SRC = ["'self'", "https://js.stripe.com"]
+CSP_CONNECT_SRC = ["'self'", "https://api.stripe.com", "https://*.stripe.com"]

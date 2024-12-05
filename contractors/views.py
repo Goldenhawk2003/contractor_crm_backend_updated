@@ -39,7 +39,12 @@ from urllib.parse import urlencode
 from docusign_esign import ApiClient, EnvelopesApi, EnvelopeDefinition, Document, Signer, Tabs, SignHere, RecipientViewRequest, Recipients
 from django.core.mail import send_mail
 from contractor_crm_backend import settings
-
+import stripe
+from django.http import HttpResponse
+import logging
+from django.db.models import Q
+from django.db.models import Count
+from django.db.models.functions import TruncDate
 
 
 # Function to suggest a contractor based on the client's answer
@@ -121,7 +126,7 @@ class ContractorViewSet(viewsets.ModelViewSet):
     serializer_class = ContractorSerializer
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, SearchFilter]  # Enable filtering
-    filterset_fields = ['job_type'] 
+    filterset_fields = ['job_type', 'location'] 
     search_field = ['name', 'job_type']
 
     def perform_update(self, serializer):
@@ -258,7 +263,13 @@ def admin_dashboard(request):
     paid_invoices = Invoice.objects.filter(status='paid').count()
     
     # Fetch form responses for the logged-in user
-    form_responses = FormResponse.objects.filter(client=request.user)
+    user_growth = (
+        User.objects.filter(date_joined__isnull=False)
+        .annotate(date=TruncDate("date_joined"))
+        .values("date")
+        .annotate(count=Count("id"))
+        .order_by("date")
+    )
     
     # Return data to frontend
     return Response({
@@ -266,7 +277,6 @@ def admin_dashboard(request):
         'total_clients': total_clients,
         'outstanding_invoices': outstanding_invoices,
         'paid_invoices': paid_invoices,
-        'form_responses': [{'response': response.response} for response in form_responses]
     })
     
 
@@ -282,7 +292,7 @@ def register_user(request):
     logger.info(f"Received data: {request.data}")
 
     # Validate required fields
-    required_fields = ['username', 'email', 'password', 'role']
+    required_fields = ['username','firstname','lastname', 'email', 'password','location', 'role']
     missing_fields = [field for field in required_fields if not request.data.get(field)]
     
     if missing_fields:
@@ -292,9 +302,12 @@ def register_user(request):
         )
 
     username = request.data.get('username')
+    firstname = request.data.get('firstname')
+    lastname = request.data.get('lastname')
     email = request.data.get('email')
     password = request.data.get('password')
     confirm_password = request.data.get('confirmPassword', None)
+    location = request.data.get("location")
     role = request.data.get('role')
     job_type = request.data.get('job_type', None) 
     print(f"Job Type: {job_type}") # Default to None if not provided
@@ -324,14 +337,18 @@ def register_user(request):
         # Create the user
         user = User.objects.create_user(
             username=username,
+            first_name=firstname,
+            last_name=lastname,
             email=email,
             password=password,
+            location=location,
             user_type=role
+        
         )
 
         # Create role-specific data
         if role == 'professional':
-            Contractor.objects.create(user=user, job_type=job_type)
+            Contractor.objects.create(user=user, job_type=job_type, location=location)
         elif role == 'client':
             Client.objects.create(user=user)
 
@@ -412,7 +429,6 @@ class MessageListView(APIView):
         except Conversation.DoesNotExist:
             return Response({"error": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND)
 
-@method_decorator(csrf_exempt, name="dispatch")
 class CreateMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -624,3 +640,123 @@ def get_user_consents(request):
         "contract_id", "signed_at"
     )
     return JsonResponse({"consents": list(consents)}, status=200)
+
+
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+@csrf_exempt
+def create_payment_intent(request):
+    try:
+        # Amount in cents (e.g., $10.00)
+        amount = 1000  # Customize based on your service price
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency="usd",
+            payment_method_types=["card"],  # Other types: 'sepa_debit', 'ideal', etc.
+        )
+        return JsonResponse({"clientSecret": intent["client_secret"]})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    
+
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+def stripe_webhook(request):
+    logger.info("Webhook hit!")
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    endpoint_secret = 'whsec_REdVGgxFAG3yWgIMWdWb4SgNWogO7XNe'
+
+    logger.info(f"Payload: {payload}")
+    logger.info(f"Signature Header: {sig_header}")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except ValueError as e:
+        logger.error(f"Invalid payload: {e}")
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError as e:
+        logger.error(f"Invalid signature: {e}")
+        return HttpResponse(status=400)
+
+    logger.info(f"Received event: {event['type']}")
+
+    return HttpResponse(status=200)
+
+
+logger = logging.getLogger(__name__)
+@csrf_exempt
+def create_invoice(request):
+    try:
+        # Create a customer (if not already created)
+        customers = stripe.Customer.list(email="ammarogeil@gmail.com").data
+        if customers:
+            customer = customers[0]
+        else:
+            customer = stripe.Customer.create(
+                email="ammarogeil@gmail.com",
+                name="John Doe"
+            )
+
+        # Create a product
+        product = stripe.Product.create(name="Service/Product Name")
+
+        # Create a price for the product
+        price = stripe.Price.create(
+            product=product.id,
+            unit_amount=1000,  # Amount in cents (e.g., $10.00)
+            currency="usd"
+        )
+
+        # Create an invoice item
+        stripe.InvoiceItem.create(
+            customer=customer.id,
+            price=price.id
+        )
+
+        # Create the invoice with collection_method set to 'send_invoice'
+        invoice = stripe.Invoice.create(
+            customer=customer.id,
+            collection_method="send_invoice",  # Change to manual invoicing
+            days_until_due=30  # Optional: Set payment terms
+        )
+
+        # Send the invoice
+        stripe.Invoice.send_invoice(invoice.id)
+
+        return JsonResponse({"message": "Invoice created and sent successfully!"})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    
+
+
+def search_users(request):
+    query = request.GET.get('q', '')
+    if not query:
+        return JsonResponse([], safe=False)
+
+    users = User.objects.filter(Q(username__icontains=query))
+    results = [{"id": user.id, "username": user.username} for user in users]
+    return JsonResponse(results, safe=False)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def reply_to_conversation(request, conversation_id):
+    conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    content = request.data.get("content", "")
+
+    if not content.strip():
+        return Response({"error": "Message content cannot be empty."}, status=400)
+
+    # Create the reply message
+    message = Message.objects.create(
+        conversation=conversation,
+        sender=request.user,
+        content=content,
+    )
+
+    return Response({"message": "Reply sent successfully.", "id": message.id}, status=201)

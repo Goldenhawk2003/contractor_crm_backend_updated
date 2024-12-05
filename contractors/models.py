@@ -14,10 +14,10 @@ class User(AbstractUser):
     )
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
     profession = models.CharField(max_length=100, blank=True, null=True)  # For contractors only
-
     # Add related_name to resolve clashes
     groups = models.ManyToManyField(Group, related_name='contractors_user_groups')
     user_permissions = models.ManyToManyField(Permission, related_name='contractors_user_permissions')
+    location = models.CharField(max_length=255, blank=True, null=True)
 
 # Contractor model linked to User
 class Contractor(models.Model):
