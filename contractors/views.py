@@ -45,7 +45,11 @@ import logging
 from django.db.models import Q
 from django.db.models import Count
 from django.db.models.functions import TruncDate
-
+from django.utils.timezone import now  # Import now from django.utils.timezone
+from .models import SentContract, Contract, User
+from django.utils import timezone
+from rest_framework.parsers import JSONParser
+from django.core.exceptions import ObjectDoesNotExist
 
 # Function to suggest a contractor based on the client's answer
 def suggest_contractor_based_on_answer(answer):
@@ -142,41 +146,18 @@ class ContractorViewSet(viewsets.ModelViewSet):
         return super().get_queryset()
 
 # ViewSet for Contracts
-class ContractViewSet(viewsets.ModelViewSet):
-    queryset = Contract.objects.all()
-    serializer_class = ContractSerializer
-    permission_classes = [IsAuthenticated, IsContractorOrClientForContract]
-
-    def get_queryset(self):
-        if self.request.user.groups.filter(name='Contractor').exists():
-            return Contract.objects.filter(contractor=self.request.user.contractor)
-        elif self.request.user.groups.filter(name='Client').exists():
-            return Contract.objects.filter(client=self.request.user.client)
-        return super().get_queryset()
-    
-    def perform_update(self, serializer):
-        # Save the contract changes first
-        contract = serializer.save()
-
-        # Update the related invoice (if it exists)
-        invoice = Invoice.objects.filter(contract=contract).first()
-        if invoice:
-            invoice.amount_due = contract.total_amount
-            invoice.due_date = contract.due_date
-            invoice.save()
-    def perform_create(self, serializer):
-        # Save the contract first
-        contract = serializer.save()
-        log_activity(user=self.request.user, action='create_contract', target_object=f"Contract ID {contract.id}", details="Contract creation details")
-
-        # Automatically create an invoice linked to this contract
-        Invoice.objects.create(
-            contract=contract,
-            client=contract.client,
-            contractor=contract.contractor,
-            amount_due=contract.total_amount,
-            due_date=contract.due_date
-        )
+class ContractListView(APIView):
+    def get(self, request):
+        contracts = Contract.objects.all()
+        data = [
+            {
+                "id": contract.id,
+                "title": contract.title,
+                "terms": contract.terms,
+            }
+            for contract in contracts
+        ]
+        return Response(data, status=status.HTTP_200_OK)
 
 class ClientViewSet(viewsets.ModelViewSet):
     queryset = Client.objects.all()
@@ -255,14 +236,14 @@ def log_activity(user, action, target_object=None, details=None):
 
 @api_view(['GET'])
 @login_required
-@user_passes_test(lambda u: u.is_superuser) 
+@user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard(request):
     total_contractors = Contractor.objects.count()
     total_clients = Client.objects.count()
     outstanding_invoices = Invoice.objects.filter(status='outstanding').count()
     paid_invoices = Invoice.objects.filter(status='paid').count()
 
-    # Fetch form responses for the logged-in user
+    # User growth analytics
     user_growth = (
         User.objects.filter(date_joined__isnull=False)
         .annotate(date=TruncDate("date_joined"))
@@ -271,13 +252,24 @@ def admin_dashboard(request):
         .order_by("date")
     )
     
-    # Return data to frontend
+    recent_service_requests = ServiceRequest.objects.order_by('-created_at')[:5]
+    recent_requests_data = [
+    {
+        "id": req.id,
+        "user": req.user.username,  # Assuming user is a ForeignKey to your User model
+        "request": req.request,
+        "created_at": req.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    for req in recent_service_requests
+]
+
+# Return the data
     return Response({
         'total_contractors': total_contractors,
         'total_clients': total_clients,
         'outstanding_invoices': outstanding_invoices,
         'paid_invoices': paid_invoices,
-
+        'recent_service_requests': recent_requests_data,  # Ensure this is included
     })
     
 
@@ -642,6 +634,144 @@ def get_user_consents(request):
     )
     return JsonResponse({"consents": list(consents)}, status=200)
 
+logger = logging.getLogger(__name__)
+
+class SendContractView(APIView):
+    parser_classes = [JSONParser]
+
+
+    def post(self, request):
+        logger = logging.getLogger(__name__)  # For detailed logging
+
+        # Log raw and parsed request details
+        logger.info(f"Request Headers: {request.headers}")
+        logger.info(f"Raw Request Body: {request.body}")
+        logger.info(f"Parsed Request Data: {request.data}")
+
+        # Extract and validate inputs
+        data = request.data
+        contract_id = data.get("contractId")
+        client_username = data.get("clientUsername")
+
+        if not contract_id or not client_username:
+            logger.error("Validation Failed: Missing contractId or clientUsername")
+            return Response(
+                {"error": "Missing required fields. Please provide both contractId and clientUsername."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Validate the contract
+            contract = Contract.objects.get(id=contract_id)
+            logger.info(f"Found Contract: {contract.title}")
+
+            # Validate the client
+            client = User.objects.get(username=client_username)
+            logger.info(f"Found Client: {client.username}")
+
+            # Check for duplicate contract sends
+            if SentContract.objects.filter(contract=contract, client=client, contractor=request.user).exists():
+                logger.warning(f"Contract '{contract.title}' has already been sent to {client.username} by {request.user.username}.")
+                return Response(
+                    {"message": f"Contract '{contract.title}' has already been sent to {client.username}."},
+                    status=status.HTTP_200_OK
+                )
+
+            # Create the SentContract object
+            sent_contract = SentContract.objects.create(
+                contractor=request.user,
+                client=client,
+                contract=contract
+            )
+            logger.info(f"Sent Contract Created: {sent_contract}")
+            return Response(
+                {"message": f"Contract '{contract.title}' successfully sent to {client.username}."},
+                status=status.HTTP_201_CREATED
+            )
+
+        except Contract.DoesNotExist:
+            logger.error("Contract not found")
+            return Response({"error": "Contract not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        except User.DoesNotExist:
+            logger.error("Client not found")
+            return Response({"error": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            logger.error(f"Unexpected Error: {str(e)}")
+            return Response(
+                {"error": "An unexpected error occurred. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+    def get(self, request):
+        contractor = request.user  # Assume the user is authenticated
+
+        # Fetch all contracts sent by the contractor
+        sent_contracts = SentContract.objects.filter(contractor=contractor).select_related('contract', 'client')
+        if not sent_contracts.exists():
+            return Response({"message": "No contracts sent yet."}, status=status.HTTP_200_OK)
+
+        data = [
+            {
+                "id": sent_contract.id,
+                "contract_title": sent_contract.contract.title,
+                "contract_terms": sent_contract.contract.terms,
+                "client_name": sent_contract.client.username,
+                "is_signed": sent_contract.is_signed,
+                "signed_at": sent_contract.signed_at,
+                "sent_at": sent_contract.sent_at,
+            }
+            for sent_contract in sent_contracts
+        ]
+
+        return Response(data, status=status.HTTP_200_OK)
+
+    
+
+
+class ReceivedContractsView(APIView):
+    def get(self, request):
+        client = request.user  # Assume the user is authenticated
+        sent_contracts = SentContract.objects.filter(client=client).select_related('contract', 'contractor')
+        data = [
+            {
+                "id": sent_contract.id,
+                "contract_title": sent_contract.contract.title,
+                "contract_terms": sent_contract.contract.terms,
+                "contractor_name": sent_contract.contractor.username,
+                "is_signed": sent_contract.is_signed,
+                "sent_at": sent_contract.sent_at,
+            }
+            for sent_contract in sent_contracts
+        ]
+        return Response(data, status=status.HTTP_200_OK)
+    
+class SignReceivedContractView(APIView):
+    def post(self, request):
+        client = request.user  # Assume the user is authenticated
+        data = request.data
+        sent_contract_id = data.get("sentContractId")
+
+        if not sent_contract_id:
+            return Response({"error": "Sent Contract ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            sent_contract = SentContract.objects.get(id=sent_contract_id, client=client)
+
+            if sent_contract.is_signed:
+                return Response({"message": "Contract already signed."}, status=status.HTTP_200_OK)
+
+            # Mark as signed
+            sent_contract.is_signed = True
+            sent_contract.signed_at = timezone.now()
+            sent_contract.save()
+
+            return Response({"message": "Contract signed successfully."}, status=status.HTTP_200_OK)
+
+        except SentContract.DoesNotExist:
+            return Response({"error": "Sent contract not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -765,27 +895,37 @@ def reply_to_conversation(request, conversation_id):
 
 
 
+logger = logging.getLogger(__name__)
+
 class ServiceRequestView(APIView):
     def post(self, request):
         serializer = ServiceRequestSerializer(data=request.data)
-        
 
         if not serializer.is_valid():
             return Response(
                 {"error": serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
 
-        service_request = serializer.validated_data['searchText']
+        service_request_text = serializer.validated_data['searchText']
         
         try:
-            logger.info(f"Service request received from user {request.user.id}: {service_request}")
-            
+            # Create and save the ServiceRequest object
+            service_request = ServiceRequest.objects.create(
+                user=request.user,
+                request=service_request_text,
+                created_at=now()
+            )
+
+            logger.info(f"Service request received from user {request.user.id}: {service_request_text}")
+
             return Response({
                 "message": "Service request submitted successfully!",
                 "details": {
-                    "request": service_request,
+                    "id": service_request.id,
+                    "user": request.user.username,
+                    "request": service_request.request,
+                    "created_at": service_request.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                 }
             }, status=status.HTTP_201_CREATED)
         
@@ -798,6 +938,9 @@ class ServiceRequestView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-     
-
-        
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_clients(request):
+    clients = User.objects.filter(user_type="client").values("id", "username")
+    return Response(list(clients), status=status.HTTP_200_OK)

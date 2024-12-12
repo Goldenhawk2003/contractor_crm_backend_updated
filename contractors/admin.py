@@ -33,10 +33,14 @@ class FormResponseAdmin(admin.ModelAdmin):
     search_fields = ['client__username', 'quiz__question']
     list_filter = ['created_at']
 
+@admin.register(Contract)
+class ContractAdmin(admin.ModelAdmin):
+    list_display = ('title', 'created_at')
+    search_fields = ('title',)
+
 admin.site.register(Client, ClientAdmin)
 admin.site.register(User)
 admin.site.register(Contractor)
-admin.site.register(Contract)
 admin.site.register(Review)
 admin.site.register(Quiz)
 admin.site.register(FormResponse)

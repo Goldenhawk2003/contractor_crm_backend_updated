@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ContractorViewSet, ContractViewSet, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView, ConversationListView, MessageListView, CreateMessageView, ContactView, stripe_webhook, create_payment_intent, create_invoice, ServiceRequestView
+from .views import ContractorViewSet, ContractListView, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView, ConversationListView, MessageListView, CreateMessageView, ContactView, stripe_webhook, create_payment_intent, create_invoice, ServiceRequestView, ReceivedContractsView, SendContractView
 from django.contrib import admin
 from .views import register
 from .views import QuizSubmitView, admin_dashboard
@@ -23,7 +23,6 @@ urlpatterns = [
 # Set up a router to automatically generate URL patterns for the viewsets
 router = DefaultRouter()
 router.register(r'contractors', ContractorViewSet)
-router.register(r'contracts', ContractViewSet)
 router.register(r'clients', ClientViewSet)
 router.register(r'invoices', InvoiceViewSet)
 router.register(r'payments', PaymentViewSet)
@@ -54,6 +53,10 @@ urlpatterns = [
     path("api/users/search/", views.search_users, name="search_users"),
     path("api/conversations/<int:conversation_id>/reply/", views.reply_to_conversation, name="reply_to_conversation"),
     path('api/request-service/', ServiceRequestView.as_view() , name='service-request'),
+    path('contracts/', ContractListView.as_view(), name='contract-list'),
+    path('api/received-contracts/', ReceivedContractsView.as_view(), name='received-contracts'),
+    path('api/sent-contracts/', SendContractView.as_view(), name='sent-contracts'),
+    path("api/clients/", views.get_clients, name="get_clients"),
 ]
 
 

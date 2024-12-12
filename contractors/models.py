@@ -36,18 +36,12 @@ class Contractor(models.Model):
 
 # Contract model between client and contractor
 class Contract(models.Model):
-    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='client_contracts')
-    contractor = models.ForeignKey(Contractor, on_delete=models.CASCADE, related_name='contractor_contracts')
-    details = models.TextField()
-    signed_at = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=50, default='Pending')  # Example statuses: Pending, Signed, Completed
-    
+    title = models.CharField(max_length=255)
+    terms = models.TextField()  # Stores the full terms of the contract
+    created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"Contract between {self.client.username} and {self.contractor.user.username}"
-    class Meta:
-        constraints = [
-            models.CheckConstraint(check=models.Q(status='Completed', signed_at__isnull=False), name='completed_contract_must_be_signed')
-        ]
+        return self.title
     
 class Client(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -236,6 +230,18 @@ class ContractConsent(models.Model):
 
 class ServiceRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    request = models.CharField(null=True, blank=True, max_length=500)
+    request = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    
+
+
+class SentContract(models.Model):
+    contractor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_contracts')
+    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_contracts')
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
+    is_signed = models.BooleanField(default=False)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    signed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.contract.title} sent to {self.client.username} by {self.contractor.username}"
