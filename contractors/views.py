@@ -261,7 +261,7 @@ def admin_dashboard(request):
     total_clients = Client.objects.count()
     outstanding_invoices = Invoice.objects.filter(status='outstanding').count()
     paid_invoices = Invoice.objects.filter(status='paid').count()
-    
+
     # Fetch form responses for the logged-in user
     user_growth = (
         User.objects.filter(date_joined__isnull=False)
@@ -277,6 +277,7 @@ def admin_dashboard(request):
         'total_clients': total_clients,
         'outstanding_invoices': outstanding_invoices,
         'paid_invoices': paid_invoices,
+
     })
     
 
