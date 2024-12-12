@@ -18,16 +18,20 @@ class User(AbstractUser):
     groups = models.ManyToManyField(Group, related_name='contractors_user_groups')
     user_permissions = models.ManyToManyField(Permission, related_name='contractors_user_permissions')
     location = models.CharField(max_length=255, blank=True, null=True)
+      # Add hourly rate
 
 # Contractor model linked to User
 class Contractor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='contractor_profile')
     job_type = models.CharField(max_length=100)
     experience_years = models.IntegerField(default=0)
-    rating = models.FloatField(default=0)
+    rating = models.FloatField(null=True, blank=True)
+    total_ratings_count = models.IntegerField(default=0)
+    total_ratings_sum = models.IntegerField(default=0)
     profile_description = models.TextField(blank=True, null=True)
     picture = models.ImageField(upload_to='contractor_pictures/', blank=True, null=True)  # Optional picture
     location = models.CharField(max_length=255, blank=True, null=True)  # Optional location
+    hourly_rate = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)  # Add hourly rate # Add hourly rate
 
     
     def __str__(self):

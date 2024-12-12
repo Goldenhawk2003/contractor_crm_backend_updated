@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation,User
 
 
 # Serializer for Contractor model
@@ -79,3 +79,22 @@ class ServiceRequestSerializer(serializers.Serializer):
             'max_length': 'Service request is too long (max 500 characters).'
         }
     )
+
+class SendContractSerializer(serializers.Serializer):
+    contractId = serializers.IntegerField()
+    clientUsername = serializers.CharField()
+
+    def validate(self, data):
+        # Validate contract existence
+        try:
+            data['contract'] = Contract.objects.get(id=data['contractId'])
+        except Contract.DoesNotExist:
+            raise serializers.ValidationError({"contractId": "Contract not found."})
+
+        # Validate client existence
+        try:
+            data['client'] = User.objects.get(username=data['clientUsername'])
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"clientUsername": "Client not found."})
+
+        return data

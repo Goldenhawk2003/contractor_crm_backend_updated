@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ContractorViewSet, ContractListView, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView, ConversationListView, MessageListView, CreateMessageView, ContactView, stripe_webhook, create_payment_intent, create_invoice, ServiceRequestView, ReceivedContractsView, SendContractView
+from .views import ContractorViewSet, ContractListView, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView, ConversationListView, MessageListView, CreateMessageView, ContactView, stripe_webhook, create_payment_intent, create_invoice, ServiceRequestView
 from django.contrib import admin
 from .views import register
 from .views import QuizSubmitView, admin_dashboard
@@ -54,9 +54,8 @@ urlpatterns = [
     path("api/conversations/<int:conversation_id>/reply/", views.reply_to_conversation, name="reply_to_conversation"),
     path('api/request-service/', ServiceRequestView.as_view() , name='service-request'),
     path('contracts/', ContractListView.as_view(), name='contract-list'),
-    path('api/received-contracts/', ReceivedContractsView.as_view(), name='received-contracts'),
-    path('api/sent-contracts/', SendContractView.as_view(), name='sent-contracts'),
-    path("api/clients/", views.get_clients, name="get_clients"),
+    path('contractors/<int:id>/rate/', views.rate_contractor, name='rate-contractor'),
+
 ]
 
 

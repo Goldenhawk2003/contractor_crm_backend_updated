@@ -255,3 +255,5 @@ STRIPE_PUBLISHABLE_KEY = 'pk_test_51QSiGBF7wkMLsTtpBBzTCQOPHg8otgHraZEnvAO7Tqv1U
 CSP_STYLE_SRC = ["'self'", "'unsafe-inline'", "https://*.stripe.com"]
 CSP_SCRIPT_SRC = ["'self'", "https://js.stripe.com"]
 CSP_CONNECT_SRC = ["'self'", "https://api.stripe.com", "https://*.stripe.com"]
+
+

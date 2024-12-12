@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
 from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest
-from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer, ServiceRequestSerializer
+from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer, ServiceRequestSerializer, SendContractSerializer
 from .models import FormResponse, Quiz
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
@@ -302,7 +302,8 @@ def register_user(request):
     confirm_password = request.data.get('confirmPassword', None)
     location = request.data.get("location")
     role = request.data.get('role')
-    job_type = request.data.get('job_type', None) 
+    job_type = request.data.get('job_type', None)
+    hourly_rate = request.data.get('hourly_rate', None) 
     print(f"Job Type: {job_type}") # Default to None if not provided
 
     # Validate passwords match
@@ -341,7 +342,7 @@ def register_user(request):
 
         # Create role-specific data
         if role == 'professional':
-            Contractor.objects.create(user=user, job_type=job_type, location=location)
+            Contractor.objects.create(user=user, job_type=job_type, location=location, hourly_rate=hourly_rate)
         elif role == 'client':
             Client.objects.create(user=user)
 
@@ -636,120 +637,6 @@ def get_user_consents(request):
 
 logger = logging.getLogger(__name__)
 
-class SendContractView(APIView):
-    parser_classes = [JSONParser]
-
-
-    def post(self, request):
-        # Log request details
-        print(f"Request Headers: {request.headers}")
-        print(f"Raw Request Body: {request.body}")
-        print(f"Parsed Request Data: {request.data}")
-
-        data = request.data
-        contract_id = data.get("contractId")
-        client_username = data.get("clientUsername")
-
-        if not contract_id or not client_username:
-            print("Validation Failed: Missing contractId or clientUsername")
-            return Response({"error": "Missing required fields."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            # Validate the contract
-            contract = Contract.objects.get(id=contract_id)
-            print(f"Found Contract: {contract.title}")
-
-            # Validate the client
-            client = User.objects.get(username=client_username)
-            print(f"Found Client: {client.username}")
-
-            # Process the contract sending
-            sent_contract = SentContract.objects.create(
-                contractor=request.user,
-                client=client,
-                contract=contract
-            )
-            print(f"Sent Contract Created: {sent_contract}")
-            return Response({"message": f"Contract '{contract.title}' sent to {client.username}."}, status=status.HTTP_201_CREATED)
-
-        except Contract.DoesNotExist:
-            print("Contract not found")
-            return Response({"error": "Contract not found."}, status=status.HTTP_404_NOT_FOUND)
-        except User.DoesNotExist:
-            print("Client not found")
-            return Response({"error": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            print(f"Unexpected Error: {str(e)}")
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def get(self, request):
-        contractor = request.user  # Assume the user is authenticated
-
-        # Fetch all contracts sent by the contractor
-        sent_contracts = SentContract.objects.filter(contractor=contractor).select_related('contract', 'client')
-        if not sent_contracts.exists():
-            return Response({"message": "No contracts sent yet."}, status=status.HTTP_200_OK)
-
-        data = [
-            {
-                "id": sent_contract.id,
-                "contract_title": sent_contract.contract.title,
-                "contract_terms": sent_contract.contract.terms,
-                "client_name": sent_contract.client.username,
-                "is_signed": sent_contract.is_signed,
-                "signed_at": sent_contract.signed_at,
-                "sent_at": sent_contract.sent_at,
-            }
-            for sent_contract in sent_contracts
-        ]
-
-        return Response(data, status=status.HTTP_200_OK)
-
-    
-
-
-class ReceivedContractsView(APIView):
-    def get(self, request):
-        client = request.user  # Assume the user is authenticated
-        sent_contracts = SentContract.objects.filter(client=client).select_related('contract', 'contractor')
-        data = [
-            {
-                "id": sent_contract.id,
-                "contract_title": sent_contract.contract.title,
-                "contract_terms": sent_contract.contract.terms,
-                "contractor_name": sent_contract.contractor.username,
-                "is_signed": sent_contract.is_signed,
-                "sent_at": sent_contract.sent_at,
-            }
-            for sent_contract in sent_contracts
-        ]
-        return Response(data, status=status.HTTP_200_OK)
-    
-class SignReceivedContractView(APIView):
-    def post(self, request):
-        client = request.user  # Assume the user is authenticated
-        data = request.data
-        sent_contract_id = data.get("sentContractId")
-
-        if not sent_contract_id:
-            return Response({"error": "Sent Contract ID is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            sent_contract = SentContract.objects.get(id=sent_contract_id, client=client)
-
-            if sent_contract.is_signed:
-                return Response({"message": "Contract already signed."}, status=status.HTTP_200_OK)
-
-            # Mark as signed
-            sent_contract.is_signed = True
-            sent_contract.signed_at = timezone.now()
-            sent_contract.save()
-
-            return Response({"message": "Contract signed successfully."}, status=status.HTTP_200_OK)
-
-        except SentContract.DoesNotExist:
-            return Response({"error": "Sent contract not found."}, status=status.HTTP_404_NOT_FOUND)
-
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 @csrf_exempt
@@ -914,3 +801,26 @@ class ServiceRequestView(APIView):
                 {"error": "Failed to process service request. Please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+@api_view(['POST'])
+def rate_contractor(request, id):
+    contractor = get_object_or_404(Contractor, id=id)
+    rating = request.data.get('rating')
+
+    if not rating or not isinstance(rating, int) or rating < 1 or rating > 5:
+        return Response({"error": "Invalid rating value."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Update average rating
+    if contractor.total_ratings_count is None:
+        contractor.total_ratings_count = 0
+        contractor.total_ratings_sum = 0
+    contractor.total_ratings_sum += rating
+    contractor.total_ratings_count += 1
+    contractor.rating = contractor.total_ratings_sum / contractor.total_ratings_count
+    contractor.save()
+
+    return Response({
+        "message": "Rating submitted successfully.",
+        "rating": contractor.rating,
+        "total_ratings_count": contractor.total_ratings_count
+    }, status=status.HTTP_200_OK)
