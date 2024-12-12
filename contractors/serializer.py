@@ -66,3 +66,16 @@ class ConversationSerializer(serializers.ModelSerializer):
     def get_latest_message(self, obj):
         last_message = obj.messages.last()  # Retrieve the most recent message
         return last_message.content if last_message else "No messages yet."
+    
+
+
+class ServiceRequestSerializer(serializers.Serializer):
+    searchText = serializers.CharField(
+        max_length=500, 
+        required=True, 
+        error_messages={
+            'blank': 'Service request cannot be empty.',
+            'null': 'Service request is required.',
+            'max_length': 'Service request is too long (max 500 characters).'
+        }
+    )

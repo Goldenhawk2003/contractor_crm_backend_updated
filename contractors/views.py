@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent
-from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest
+from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer, ServiceRequestSerializer
 from .models import FormResponse, Quiz
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
@@ -760,3 +760,43 @@ def reply_to_conversation(request, conversation_id):
     )
 
     return Response({"message": "Reply sent successfully.", "id": message.id}, status=201)
+
+
+
+
+class ServiceRequestView(APIView):
+    def post(self, request):
+        serializer = ServiceRequestSerializer(data=request.data)
+        
+
+        if not serializer.is_valid():
+            return Response(
+                {"error": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+
+        service_request = serializer.validated_data['searchText']
+        
+        try:
+            logger.info(f"Service request received from user {request.user.id}: {service_request}")
+            
+            return Response({
+                "message": "Service request submitted successfully!",
+                "details": {
+                    "request": service_request,
+                }
+            }, status=status.HTTP_201_CREATED)
+        
+        except Exception as e:
+            # Log the exception
+            logger.error(f"Error processing service request: {str(e)}")
+            
+            return Response(
+                {"error": "Failed to process service request. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+     
+
+        

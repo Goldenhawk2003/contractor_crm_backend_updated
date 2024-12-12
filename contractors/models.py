@@ -232,3 +232,10 @@ class ContractConsent(models.Model):
 
     def __str__(self):
         return f"Consent by {self.user.username} for Contract {self.contract_id}"
+    
+
+class ServiceRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    request = models.CharField(null=True, blank=True, max_length=500)
+
+    
