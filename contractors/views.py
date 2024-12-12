@@ -641,69 +641,46 @@ class SendContractView(APIView):
 
 
     def post(self, request):
-        logger = logging.getLogger(__name__)  # For detailed logging
+        # Log request details
+        print(f"Request Headers: {request.headers}")
+        print(f"Raw Request Body: {request.body}")
+        print(f"Parsed Request Data: {request.data}")
 
-        # Log raw and parsed request details
-        logger.info(f"Request Headers: {request.headers}")
-        logger.info(f"Raw Request Body: {request.body}")
-        logger.info(f"Parsed Request Data: {request.data}")
-
-        # Extract and validate inputs
         data = request.data
         contract_id = data.get("contractId")
         client_username = data.get("clientUsername")
 
         if not contract_id or not client_username:
-            logger.error("Validation Failed: Missing contractId or clientUsername")
-            return Response(
-                {"error": "Missing required fields. Please provide both contractId and clientUsername."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            print("Validation Failed: Missing contractId or clientUsername")
+            return Response({"error": "Missing required fields."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Validate the contract
             contract = Contract.objects.get(id=contract_id)
-            logger.info(f"Found Contract: {contract.title}")
+            print(f"Found Contract: {contract.title}")
 
             # Validate the client
             client = User.objects.get(username=client_username)
-            logger.info(f"Found Client: {client.username}")
+            print(f"Found Client: {client.username}")
 
-            # Check for duplicate contract sends
-            if SentContract.objects.filter(contract=contract, client=client, contractor=request.user).exists():
-                logger.warning(f"Contract '{contract.title}' has already been sent to {client.username} by {request.user.username}.")
-                return Response(
-                    {"message": f"Contract '{contract.title}' has already been sent to {client.username}."},
-                    status=status.HTTP_200_OK
-                )
-
-            # Create the SentContract object
+            # Process the contract sending
             sent_contract = SentContract.objects.create(
                 contractor=request.user,
                 client=client,
                 contract=contract
             )
-            logger.info(f"Sent Contract Created: {sent_contract}")
-            return Response(
-                {"message": f"Contract '{contract.title}' successfully sent to {client.username}."},
-                status=status.HTTP_201_CREATED
-            )
+            print(f"Sent Contract Created: {sent_contract}")
+            return Response({"message": f"Contract '{contract.title}' sent to {client.username}."}, status=status.HTTP_201_CREATED)
 
         except Contract.DoesNotExist:
-            logger.error("Contract not found")
+            print("Contract not found")
             return Response({"error": "Contract not found."}, status=status.HTTP_404_NOT_FOUND)
-
         except User.DoesNotExist:
-            logger.error("Client not found")
+            print("Client not found")
             return Response({"error": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
-
         except Exception as e:
-            logger.error(f"Unexpected Error: {str(e)}")
-            return Response(
-                {"error": "An unexpected error occurred. Please try again later."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
+            print(f"Unexpected Error: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def get(self, request):
         contractor = request.user  # Assume the user is authenticated
@@ -937,10 +914,3 @@ class ServiceRequestView(APIView):
                 {"error": "Failed to process service request. Please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-@csrf_exempt
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def get_clients(request):
-    clients = User.objects.filter(user_type="client").values("id", "username")
-    return Response(list(clients), status=status.HTTP_200_OK)
