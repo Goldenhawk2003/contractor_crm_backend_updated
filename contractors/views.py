@@ -303,7 +303,8 @@ def register_user(request):
     location = request.data.get("location")
     role = request.data.get('role')
     job_type = request.data.get('job_type', None)
-    hourly_rate = request.data.get('hourly_rate', None) 
+    hourly_rate = request.data.get('hourly_rate', None)
+    logo = request.FILES.get("logo")
     print(f"Job Type: {job_type}") # Default to None if not provided
 
     # Validate passwords match
@@ -342,7 +343,7 @@ def register_user(request):
 
         # Create role-specific data
         if role == 'professional':
-            Contractor.objects.create(user=user, job_type=job_type, location=location, hourly_rate=hourly_rate)
+            Contractor.objects.create(user=user, job_type=job_type, location=location, hourly_rate=hourly_rate, logo=logo)
         elif role == 'client':
             Client.objects.create(user=user)
 
@@ -376,17 +377,27 @@ def login_view(request):
 
 @login_required  # Ensures only authenticated users can access this view
 def get_user_info(request):
-    # Access the logged-in user
     user = request.user
 
-    # Return some user information in the response
+    # Check if the user is a contractor and fetch additional info if they are
+    contractor_info = None
+    if user.user_type == "professional":  # Assuming "professional" indicates contractors
+        try:
+            contractor = Contractor.objects.get(user=user)
+            contractor_info = {
+                'logo': contractor.logo.url if contractor.logo else None,
+            }
+        except Contractor.DoesNotExist:
+            contractor_info = {'logo': None}
+
     return JsonResponse({
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
-        'type': user.user_type
+        'type': user.user_type,
+        **(contractor_info or {}),  # Add contractor-specific info if available
     })
 
 

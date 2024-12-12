@@ -18,6 +18,7 @@ class User(AbstractUser):
     groups = models.ManyToManyField(Group, related_name='contractors_user_groups')
     user_permissions = models.ManyToManyField(Permission, related_name='contractors_user_permissions')
     location = models.CharField(max_length=255, blank=True, null=True)
+    logo = models.ImageField(upload_to='logos/', null=True, blank=True)
       # Add hourly rate
 
 # Contractor model linked to User
@@ -32,6 +33,7 @@ class Contractor(models.Model):
     picture = models.ImageField(upload_to='contractor_pictures/', blank=True, null=True)  # Optional picture
     location = models.CharField(max_length=255, blank=True, null=True)  # Optional location
     hourly_rate = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)  # Add hourly rate # Add hourly rate
+    logo = models.ImageField(upload_to='logos/', null=True, blank=True)
 
     
     def __str__(self):
