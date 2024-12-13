@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest, ContractorApplication
 from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer, ServiceRequestSerializer, SendContractSerializer
 from .models import FormResponse, Quiz
 from rest_framework.permissions import IsAuthenticated
@@ -251,25 +251,48 @@ def admin_dashboard(request):
         .annotate(count=Count("id"))
         .order_by("date")
     )
-    
+
+    # Fetch pending contractor applications
+    pending_applications = ContractorApplication.objects.filter(status='Pending')
+
+    # Prepare application data for the response
+    pending_applications_data = []
+    for app in pending_applications:
+        try:
+            user = User.objects.get(id=app.user_id)  # Fetch user details
+            pending_applications_data.append({
+                "id": app.id,
+                "username": user.username,  # Access username via User model
+                "job_type": app.job_type,
+                "location": app.location,
+                "hourly_rate": str(app.hourly_rate),
+                "logo": app.logo.url if app.logo else None,
+                "status": app.status,
+            })
+        except User.DoesNotExist:
+            # Log or handle missing user case
+            pass
+
+
     recent_service_requests = ServiceRequest.objects.order_by('-created_at')[:5]
     recent_requests_data = [
-    {
-        "id": req.id,
-        "user": req.user.username,  # Assuming user is a ForeignKey to your User model
-        "request": req.request,
-        "created_at": req.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-    }
-    for req in recent_service_requests
-]
+        {
+            "id": req.id,
+            "user": req.user.username,  # Assuming user is a ForeignKey to your User model
+            "request": req.request,
+            "created_at": req.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        for req in recent_service_requests
+    ]
 
-# Return the data
+    # Return the data
     return Response({
         'total_contractors': total_contractors,
         'total_clients': total_clients,
         'outstanding_invoices': outstanding_invoices,
         'paid_invoices': paid_invoices,
-        'recent_service_requests': recent_requests_data,  # Ensure this is included
+         "pending_applications": pending_applications_data,
+        'recent_service_requests': recent_requests_data,  # Include recent requests
     })
     
 
@@ -280,14 +303,12 @@ User = get_user_model()
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):
-    
     logger = logging.getLogger(__name__)
     logger.info(f"Received data: {request.data}")
 
-    # Validate required fields
-    required_fields = ['username','firstname','lastname', 'email', 'password','location', 'role']
+    required_fields = ['username', 'firstname', 'lastname', 'email', 'password', 'location', 'role']
     missing_fields = [field for field in required_fields if not request.data.get(field)]
-    
+
     if missing_fields:
         return Response(
             {"error": f"Missing fields: {', '.join(missing_fields)}"},
@@ -299,68 +320,66 @@ def register_user(request):
     lastname = request.data.get('lastname')
     email = request.data.get('email')
     password = request.data.get('password')
-    confirm_password = request.data.get('confirmPassword', None)
     location = request.data.get("location")
     role = request.data.get('role')
     job_type = request.data.get('job_type', None)
     hourly_rate = request.data.get('hourly_rate', None)
     logo = request.FILES.get("logo")
-    print(f"Job Type: {job_type}") # Default to None if not provided
 
-    # Validate passwords match
-    if confirm_password and password != confirm_password:
-        return Response({"error": "Passwords do not match"}, status=status.HTTP_400_BAD_REQUEST)
-
-    # Validate role
     if role not in ['client', 'professional']:
         return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Validate job_type for professionals
     if role == 'professional' and not job_type:
-        return Response(
-            {"error": "Job type is required for professionals"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"error": "Job type is required for professionals"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        # Check for duplicate username or email
-        if User.objects.filter(username__iexact=username).exists():
-            return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(email__iexact=email).exists():
-            return Response({"error": "Email already in use"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Create the user
-        user = User.objects.create_user(
-            username=username,
-            first_name=firstname,
-            last_name=lastname,
-            email=email,
-            password=password,
-            location=location,
-            user_type=role
-        
-        )
-
-        # Create role-specific data
-        if role == 'professional':
-            Contractor.objects.create(user=user, job_type=job_type, location=location, hourly_rate=hourly_rate, logo=logo)
-        elif role == 'client':
+        if role == 'client':
+            # Register client immediately
+            user = User.objects.create_user(
+                username=username,
+                first_name=firstname,
+                last_name=lastname,
+                email=email,
+                password=password,
+                location=location,
+                user_type=role,
+                is_active=True  # Clients are activated immediately
+            )
             Client.objects.create(user=user)
+            logger.info(f"Client {username} registered successfully")
+            return Response(
+                {"message": "Client registered successfully", "id": user.id},
+                status=status.HTTP_201_CREATED
+            )
 
-        logger.info(f"User {username} registered successfully")
-        return Response(
-            {"message": "User registered successfully", "id": user.id, "role": user.user_type},
-            status=status.HTTP_201_CREATED
-        )
+        elif role == 'professional':
+            # Register contractor as inactive and create an application
+            user = User.objects.create_user(
+                username=username,
+                first_name=firstname,
+                last_name=lastname,
+                email=email,
+                password=password,
+                location=location,
+                user_type=role,
+                is_active=False  # Contractors require admin approval
+            )
+            ContractorApplication.objects.create(
+                user=user,
+                job_type=job_type,
+                location=location,
+                hourly_rate=hourly_rate,
+                logo=logo
+            )
+            logger.info(f"Contractor application for {username} submitted successfully")
+            return Response(
+                {"message": "Contractor application submitted successfully. Pending admin approval.", "id": user.id},
+                status=status.HTTP_201_CREATED
+            )
 
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
-        return Response(
-            {"error": "An unexpected error occurred"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
-
+        return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 @api_view(['POST'])
 def login_view(request):
     """Handles login"""
@@ -835,3 +854,67 @@ def rate_contractor(request, id):
         "rating": contractor.rating,
         "total_ratings_count": contractor.total_ratings_count
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def handle_application(request, application_id):
+    action = request.data.get('action')  # "accept" or "reject"
+    application = get_object_or_404(ContractorApplication, id=application_id)
+
+    if action == "accept":
+        try:
+            # Create a Contractor from the application
+            Contractor.objects.create(
+                user=application.user,
+                job_type=application.job_type,
+                location=application.location,
+                hourly_rate=application.hourly_rate,
+                logo=application.logo,
+            )
+            # Delete the application after successful acceptance
+            application.delete()
+            return Response({"message": "Contractor added successfully."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    elif action == "reject":
+        # Delete the application
+        application.delete()
+        return Response({"message": "Application rejected and deleted."}, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "Invalid action."}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def approve_contractor(request, id):
+    try:
+        # Get the contractor application by ID
+        application = ContractorApplication.objects.get(id=id)
+
+        # Create a new contractor and delete the application
+        Contractor.objects.create(
+            user=application.user,
+            job_type=application.job_type,
+            location=application.location,
+            hourly_rate=application.hourly_rate,
+            logo=application.logo,
+        )
+        application.delete()
+        return Response({"message": "Contractor approved successfully."}, status=status.HTTP_200_OK)
+
+    except ContractorApplication.DoesNotExist:
+        return Response({"error": "Application not found."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['POST'])
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def reject_contractor(request, id):
+    try:
+        application = ContractorApplication.objects.get(id=id)
+        application.delete()
+        return Response({"message": "Contractor application rejected successfully."}, status=status.HTTP_200_OK)
+
+    except ContractorApplication.DoesNotExist:
+        return Response({"error": "Contractor application not found."}, status=status.HTTP_404_NOT_FOUND)

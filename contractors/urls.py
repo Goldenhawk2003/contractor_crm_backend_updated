@@ -55,9 +55,10 @@ urlpatterns = [
     path('api/request-service/', ServiceRequestView.as_view() , name='service-request'),
     path('contracts/', ContractListView.as_view(), name='contract-list'),
     path('contractors/<int:id>/rate/', views.rate_contractor, name='rate-contractor'),
+    path('api/approve-contractor/<int:id>/', views.approve_contractor, name='approve-contractor'),
+    path('api/reject-contractor/<int:id>/', views.reject_contractor, name='reject-contractor'),
 
 ]
-
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
