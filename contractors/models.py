@@ -43,8 +43,8 @@ class Contractor(models.Model):
 # Contract model between client and contractor
 class Contract(models.Model):
     title = models.CharField(max_length=255)
-    terms = models.TextField()  # Stores the full terms of the contract
-    created_at = models.DateTimeField(auto_now_add=True)
+    content = models.TextField()  # Stores the full terms of the contract
+    sent_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title

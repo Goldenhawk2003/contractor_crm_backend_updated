@@ -153,7 +153,7 @@ class ContractListView(APIView):
             {
                 "id": contract.id,
                 "title": contract.title,
-                "terms": contract.terms,
+                "content": contract.content,
             }
             for contract in contracts
         ]

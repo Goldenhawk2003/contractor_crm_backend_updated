@@ -35,7 +35,7 @@ class FormResponseAdmin(admin.ModelAdmin):
 
 @admin.register(Contract)
 class ContractAdmin(admin.ModelAdmin):
-    list_display = ('title', 'created_at')
+    list_display = ('title', 'sent_at')
     search_fields = ('title',)
 
 admin.site.register(Client, ClientAdmin)
