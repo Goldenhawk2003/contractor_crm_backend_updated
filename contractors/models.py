@@ -226,7 +226,7 @@ class Message(models.Model):
 
 class ContractConsent(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    contract_id = models.IntegerField()  # Assuming each contract has a unique ID
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="consents") # Assuming each contract has a unique ID
     consent_given = models.BooleanField(default=False)
     signed_at = models.DateTimeField(auto_now_add=True)
 
