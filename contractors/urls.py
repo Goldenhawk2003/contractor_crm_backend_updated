@@ -58,6 +58,8 @@ urlpatterns = [
     path('api/approve-contractor/<int:id>/', views.approve_contractor, name='approve-contractor'),
     path('api/reject-contractor/<int:id>/', views.reject_contractor, name='reject-contractor'),
     path('api/users/username/<str:username>/', views.get_user_by_username, name='get_user_by_username'),
+    path("api/received-contracts/", views.get_received_contracts, name="received-contracts"),
+    path("api/sent-contracts/", views.get_sent_contracts, name="sent-contracts"),
 
 ]
 

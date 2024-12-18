@@ -45,7 +45,17 @@ class Contract(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()  # Stores the full terms of the contract
     sent_at = models.DateTimeField(auto_now_add=True)
-
+    is_signed = models.BooleanField(default=False)
+    recipient = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True
+    ) 
+    sender = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name="sent_contracts_from_contracts",  # Unique related_name for sender
+        null=True, 
+        blank=True
+    )
     def __str__(self):
         return self.title
     
@@ -242,7 +252,11 @@ class ServiceRequest(models.Model):
 
 
 class SentContract(models.Model):
-    contractor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_contracts')
+    contractor = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name="sent_contracts",  # Unique related_name for contractor
+    )
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_contracts')
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
     is_signed = models.BooleanField(default=False)
@@ -263,3 +277,4 @@ class ContractorApplication(models.Model):
     status = models.CharField(max_length=20, choices=[("Pending", "Pending"), ("Approved", "Approved"), ("Rejected", "Rejected")], default="Pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+

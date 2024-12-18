@@ -549,72 +549,48 @@ def get_docusign_client():
     )
     client.set_default_header("Authorization", f"Bearer {access_token.access_token}")
     return client
-@csrf_exempt
+
+
 def send_contract(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            email = data.get("email")
-            name = data.get("name")
+            print("Payload received:", data)
+
+            user_id = data.get("user_id")
             contract_content = data.get("contractContent")
 
-            if not email or not name or not contract_content:
+            # Check for missing fields
+            if not user_id or not contract_content:
+                print("Validation failed: Missing user_id or contractContent.")
                 return JsonResponse({"error": "Missing required fields."}, status=400)
 
-            # Initialize DocuSign API Client
-            api_client = ApiClient()
-            api_client.host = "https://demo.docusign.net/restapi"  # Use demo environment
-            api_client.set_default_header("Authorization", "Bearer YOUR_ACCESS_TOKEN")
+            # Check if user exists
+            try:
+                recipient = User.objects.get(id=user_id)
+                print("Recipient found:", recipient)
+            except User.DoesNotExist:
+                print("Validation failed: User not found.")
+                return JsonResponse({"error": "User not found."}, status=404)
 
-            # Create Document
-            document = Document(
-                document_base64=base64.b64encode(contract_content.encode()).decode(),
-                name="Contract",
-                file_extension="txt",
-                document_id="1"
+            # Save the contract (if necessary)
+            # Replace or update the following logic if needed
+            contract = Contract.objects.create(
+                title="Default Title",  # Adjust title logic as needed
+                content=contract_content,
+                recipient=recipient,
+                sender=request.user
             )
+            print("Contract created:", contract)
 
-            # Create Signer
-            signer = Signer(
-                email=email,
-                name=name,
-                recipient_id="1",
-                routing_order="1"
-            )
-
-            # Create SignHere Tab
-            sign_here = SignHere(
-                anchor_string="/sn1/",
-                anchor_units="pixels",
-                anchor_x_offset="20",
-                anchor_y_offset="10"
-            )
-
-            # Add Tabs to Signer
-            signer.tabs = Tabs(sign_here_tabs=[sign_here])
-
-            # Create Recipients
-            recipients = Recipients(signers=[signer])
-
-            # Create Envelope Definition
-            envelope_definition = EnvelopeDefinition(
-                email_subject="Please sign this contract",
-                documents=[document],
-                recipients=recipients,
-                status="sent"
-            )
-
-            # Send Envelope
-            envelopes_api = EnvelopesApi(api_client)
-            results = envelopes_api.create_envelope(account_id="31467551", envelope_definition=envelope_definition)
-
-            return JsonResponse({"envelopeId": results.envelope_id}, status=200)
+            return JsonResponse({"message": "Contract sent successfully."}, status=201)
 
         except Exception as e:
+            print("Error occurred:", str(e))
             return JsonResponse({"error": str(e)}, status=500)
 
+    print("Invalid request method.")
     return JsonResponse({"error": "Invalid request method."}, status=405)
-
 
 def get_contract_status(envelope_id):
     client = get_docusign_client()
@@ -623,35 +599,42 @@ def get_contract_status(envelope_id):
     return envelope.status
 
 
+def get_received_contracts(request):
+    contracts = Contract.objects.filter(recipient=request.user)
+    data = [
+        {
+            "id": contract.id,
+            "title": contract.title,
+            "content": contract.content,
+            "is_signed": contract.is_signed,
+            "sent_at": contract.sent_at,
+        }
+        for contract in contracts
+    ]
+    return JsonResponse({"contracts": data}, status=200)
+
 @login_required  # Ensure the user is authenticated
 def sign_contract(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            contract_id = data.get("contractId")
-            consent = data.get("consent")
+            contract_id = data.get("contract_id")
 
-            if not contract_id or consent is None:
-                return JsonResponse({"error": "Invalid input."}, status=400)
+            if not contract_id:
+                return JsonResponse({"error": "Contract ID is required."}, status=400)
 
-            # Use the authenticated user from the request
-            user = request.user
+            contract = Contract.objects.get(id=contract_id, recipient=request.user)
 
-            # Prevent duplicate consents
-            if ContractConsent.objects.filter(user=user, contract_id=contract_id).exists():
-                return JsonResponse({"message": "Contract already signed."}, status=200)
+            if contract.is_signed:
+                return JsonResponse({"error": "Contract is already signed."}, status=400)
 
-            # Save the consent
-            ContractConsent.objects.create(
-                user=user,
-                contract_id=contract_id,
-                consent_given=consent,
-            )
+            contract.is_signed = True
+            contract.save()
 
             return JsonResponse({"message": "Contract signed successfully."}, status=200)
 
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON payload."}, status=400)
+        except Contract.DoesNotExist:
+            return JsonResponse({"error": "Contract not found."}, status=404)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
@@ -666,6 +649,29 @@ def get_user_consents(request):
     return JsonResponse({"consents": list(consents)}, status=200)
 
 logger = logging.getLogger(__name__)
+
+def get_sent_contracts(request):
+    if request.method == "GET":
+        contractor = request.user
+        print(f"Logged-in user: {contractor}")  # Debug log
+
+        sent_contracts = Contract.objects.filter(sender=contractor)  # Filter contracts sent by this user
+        print(f"Sent contracts for {contractor}: {sent_contracts}")  # Debug log
+
+        data = [
+            {
+                "id": contract.id,
+                "title": contract.title,
+                "recipient": contract.recipient.username if contract.recipient else "Unknown",
+                "is_signed": contract.is_signed,
+                "sent_at": contract.sent_at,
+            }
+            for contract in sent_contracts
+        ]
+
+        return JsonResponse({"contracts": data}, status=200)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
