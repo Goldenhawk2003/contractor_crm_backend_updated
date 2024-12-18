@@ -57,6 +57,7 @@ urlpatterns = [
     path('contractors/<int:id>/rate/', views.rate_contractor, name='rate-contractor'),
     path('api/approve-contractor/<int:id>/', views.approve_contractor, name='approve-contractor'),
     path('api/reject-contractor/<int:id>/', views.reject_contractor, name='reject-contractor'),
+    path('api/users/username/<str:username>/', views.get_user_by_username, name='get_user_by_username'),
 
 ]
 

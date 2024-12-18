@@ -28,7 +28,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 import logging
 from django.shortcuts import get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 import json
 from django.contrib.auth.decorators import user_passes_test
 from rest_framework.generics import RetrieveAPIView
@@ -918,3 +918,15 @@ def reject_contractor(request, id):
 
     except ContractorApplication.DoesNotExist:
         return Response({"error": "Contractor application not found."}, status=status.HTTP_404_NOT_FOUND)
+    
+
+def get_user_by_username(request, username):
+    try:
+        user = User.objects.get(username=username)
+        return JsonResponse({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,  # Add other fields as needed
+        })
+    except User.DoesNotExist:
+        raise Http404("User not found")
