@@ -380,20 +380,19 @@ def register_user(request):
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-@api_view(['POST'])
+
+@csrf_exempt
 def login_view(request):
-    """Handles login"""
-    username = request.data.get('username')
-    password = request.data.get('password')
-
-    user = authenticate(request, username=username, password=password)
-
-    if user is not None:
-        login(request, user)  # Logs the user in by creating a session
-        return JsonResponse({"message": "Login successful"})
-    else:
-        return JsonResponse({"error": "Invalid username or password"}, status=400)
-
+    if request.method == "POST":
+        data = json.loads(request.body)
+        username = data.get("username")
+        password = data.get("password")
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({"success": "Logged in successfully."}, status=200)
+        return JsonResponse({"error": "Invalid credentials."}, status=400)
+    return JsonResponse({"error": "Invalid request method."}, status=405)
 @login_required  # Ensures only authenticated users can access this view
 def get_user_info(request):
     user = request.user
