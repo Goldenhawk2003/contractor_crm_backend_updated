@@ -18,7 +18,7 @@ from rest_framework.views import APIView
 from .models import ActivityLog, AdminDashboard
 from django.template import TemplateDoesNotExist
 from django.contrib.auth import get_user_model
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
@@ -393,8 +393,11 @@ def login_view(request):
             return JsonResponse({"success": "Logged in successfully."}, status=200)
         return JsonResponse({"error": "Invalid credentials."}, status=400)
     return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
 @login_required  # Ensures only authenticated users can access this view
 def get_user_info(request):
+    permission_classes = [IsAuthenticated]
     user = request.user
 
     # Check if the user is a contractor and fetch additional info if they are
@@ -935,3 +938,11 @@ def get_user_by_username(request, username):
         })
     except User.DoesNotExist:
         raise Http404("User not found")
+    
+
+
+def logout_view(request):
+    if request.method == "POST":
+        logout(request)  # Clears the session
+        return JsonResponse({"message": "Logged out successfully"}, status=200)
+    return JsonResponse({"error": "Invalid request method"}, status=405)
