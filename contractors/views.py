@@ -560,11 +560,12 @@ def send_contract(request):
             print("Payload received:", data)
 
             user_id = data.get("user_id")
+            contract_title = data.get("title")  # Fetch the title from the request
             contract_content = data.get("contractContent")
 
-            # Check for missing fields
-            if not user_id or not contract_content:
-                print("Validation failed: Missing user_id or contractContent.")
+            # Validate inputs
+            if not user_id or not contract_title or not contract_content:
+                print("Validation failed: Missing required fields.")
                 return JsonResponse({"error": "Missing required fields."}, status=400)
 
             # Check if user exists
@@ -575,10 +576,9 @@ def send_contract(request):
                 print("Validation failed: User not found.")
                 return JsonResponse({"error": "User not found."}, status=404)
 
-            # Save the contract (if necessary)
-            # Replace or update the following logic if needed
+            # Create the contract
             contract = Contract.objects.create(
-                title="Default Title",  # Adjust title logic as needed
+                title=contract_title,
                 content=contract_content,
                 recipient=recipient,
                 sender=request.user
