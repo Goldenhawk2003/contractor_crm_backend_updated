@@ -35,15 +35,14 @@ urlpatterns = [
     path('api/login/', views.login_view, name='login'),
     path('api/csrf_token/', csrf_token_view),
     path('api/user-info/', get_user_info, name='user-info'),
+    path('api/user-info-superuser/', views.user_info, name='user-info-superuser'),
     path('api/quiz/questions/', get_quiz_questions, name='quiz-questions'),
     path('api/quiz/submit/', submit_quiz_response, name='quiz-submit'),
     path('api/contractors/by-user/<int:user_id>/', ContractorByUserView.as_view(), name='contractor-by-user'),
     path("api/conversations/", ConversationListView.as_view(), name="conversation-list"),
     path("api/conversations/<int:conversation_id>/messages/", MessageListView.as_view(), name="message-list"),
     path("api/messages/", CreateMessageView.as_view(), name="create-message"),
-    path("docusign/login/", views.get_docusign_client, name="docusign_login"),
     path('api/send-contract/', views.send_contract, name='send-contract'),
-    path("docusign/status/<str:envelope_id>/", views.get_contract_status, name="get_envelope_status"),
     path('contact/', ContactView.as_view(), name='contact'),
     path("api/sign-contract/", views.sign_contract, name="sign-contract"),
     path("api/user-consents/", views.get_user_consents, name="user-consents"),
@@ -61,7 +60,10 @@ urlpatterns = [
     path("api/received-contracts/", views.get_received_contracts, name="received-contracts"),
     path("api/sent-contracts/", views.get_sent_contracts, name="sent-contracts"),
     path('logout/', views.logout_view, name='logout'),
-
+    path('dashboard/form-responses/', views.form_responses_dashboard, name='form_responses_dashboard'),
+    path('quiz/add-question/', views.add_question, name='add_question'),
+    path('quiz/delete-question/<int:question_id>/', views.delete_question, name='delete_question'),
+    path('quiz/questions/', views.list_questions, name='list_questions'),
 ]
 
 if settings.DEBUG:

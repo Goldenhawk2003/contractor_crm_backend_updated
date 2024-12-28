@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest, ContractorApplication
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest, ContractorApplication, ClientQuizResponse
 from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer, ServiceRequestSerializer, SendContractSerializer
 from .models import FormResponse, Quiz
 from rest_framework.permissions import IsAuthenticated
@@ -50,6 +50,7 @@ from .models import SentContract, Contract, User
 from django.utils import timezone
 from rest_framework.parsers import JSONParser
 from django.core.exceptions import ObjectDoesNotExist
+from collections import defaultdict
 
 # Function to suggest a contractor based on the client's answer
 def suggest_contractor_based_on_answer(answer):
@@ -122,6 +123,93 @@ def submit_quiz_response(request):
         return JsonResponse({"message": "Response submitted successfully!"}, status=201)
 
     return JsonResponse({"error": "Invalid request method"}, status=400)
+
+
+
+def form_responses_dashboard(request):
+    if request.method == "GET":
+        # Query all form responses
+        responses = FormResponse.objects.select_related('client', 'quiz', 'contractor_suggestion').all()
+
+        # Group responses by username
+        grouped_responses = defaultdict(list)
+        for response in responses:
+            grouped_responses[response.client.username].append({
+                'quiz_question': response.quiz.question,
+                'answer': response.answer,
+                'selected_choice': response.selected_choice,
+                'contractor_suggestion': response.contractor_suggestion.name if response.contractor_suggestion else None,
+                'created_at': response.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            })
+
+        # Prepare data for JSON response
+        response_data = [{'client': client, 'responses': resp_list} for client, resp_list in grouped_responses.items()]
+
+        # Return as JSON
+        return JsonResponse({'responses': response_data}, status=200)
+
+    # Handle invalid methods
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def add_question(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            question_text = data.get("question")
+            question_type = data.get("question_type", "text")
+            description = data.get("description", "")
+            choices = data.get("choices", None)
+
+            if not question_text:
+                return JsonResponse({"error": "Question text is required."}, status=400)
+
+            # Validate choices for multiple-choice questions
+            if question_type == "multiple_choice" and not choices:
+                return JsonResponse({"error": "Choices are required for multiple-choice questions."}, status=400)
+
+            question = Quiz.objects.create(
+                question=question_text,
+                description=description,
+                question_type=question_type,
+                choices=choices if question_type == "multiple_choice" else None,
+            )
+            return JsonResponse({"message": "Question added successfully.", "id": question.id}, status=201)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Method not allowed."}, status=405)
+
+@csrf_exempt
+def delete_question(request, question_id):
+    if request.method == "DELETE":
+        try:
+            question = Quiz.objects.get(id=question_id)
+            question.delete()
+            return JsonResponse({"message": "Question deleted successfully."}, status=200)
+        except Quiz.DoesNotExist:
+            return JsonResponse({"error": "Question not found."}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Method not allowed."}, status=405)
+
+def list_questions(request):
+    if request.method == "GET":
+        questions = Quiz.objects.all()
+        response_data = [
+            {
+                "id": question.id,
+                "question": question.question,
+                "description": question.description,
+                "question_type": question.question_type,
+                "choices": question.choices,
+            }
+            for question in questions
+        ]
+        return JsonResponse({"questions": response_data}, status=200)
+
+    return JsonResponse({"error": "Method not allowed."}, status=405)
 
 # ViewSet for Contractors
 @permission_classes([AllowAny])
@@ -421,6 +509,14 @@ def get_user_info(request):
         **(contractor_info or {}),  # Add contractor-specific info if available
     })
 
+def user_info(request):
+    user = request.user
+    return JsonResponse({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "is_superuser": user.is_superuser,  # Include this field
+    })
 
 def csrf_token_view(request):
     # Generates a new CSRF token for the client
@@ -539,18 +635,7 @@ class ContactView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
-def get_docusign_client():
-    client = ApiClient()
-    client.set_oauth_base_path(settings.DOCUSIGN["BASE_PATH"])
-    access_token = client.request_jwt_user_token(
-        client_id=settings.DOCUSIGN["INTEGRATION_KEY"],
-        user_id=settings.DOCUSIGN["USER_ID"],
-        oauth_host_name=settings.DOCUSIGN["BASE_PATH"],
-        private_key_path=settings.DOCUSIGN["PRIVATE_KEY"],
-        expires_in=3600,
-    )
-    client.set_default_header("Authorization", f"Bearer {access_token.access_token}")
-    return client
+
 
 
 def send_contract(request):
@@ -594,11 +679,7 @@ def send_contract(request):
     print("Invalid request method.")
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
-def get_contract_status(envelope_id):
-    client = get_docusign_client()
-    envelopes_api = EnvelopesApi(client)
-    envelope = envelopes_api.get_envelope(account_id=settings.DOCUSIGN["31467551"], envelope_id=envelope_id)
-    return envelope.status
+
 
 
 def get_received_contracts(request):
