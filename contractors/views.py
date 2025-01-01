@@ -51,6 +51,7 @@ from django.utils import timezone
 from rest_framework.parsers import JSONParser
 from django.core.exceptions import ObjectDoesNotExist
 from collections import defaultdict
+from django.db.models import Max
 
 # Function to suggest a contractor based on the client's answer
 def suggest_contractor_based_on_answer(answer):
@@ -541,6 +542,12 @@ class ConversationListView(APIView):
         conversations = Conversation.objects.filter(participants=request.user)
         serializer = ConversationSerializer(conversations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def get_queryset(self):
+        # Annotate conversations with the latest message timestamp
+        return Conversation.objects.annotate(
+            latest_message_time=Max('messages__timestamp')
+        ).order_by('-latest_message_time') 
 
 class MessageListView(APIView):
     def get(self, request, conversation_id):

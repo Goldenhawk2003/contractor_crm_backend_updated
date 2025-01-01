@@ -55,10 +55,13 @@ class MessageSerializer(serializers.ModelSerializer):
 class ConversationSerializer(serializers.ModelSerializer):
     participants = serializers.SerializerMethodField()
     latest_message = serializers.SerializerMethodField("get_latest_message")
+    latest_message_timestamp = serializers.DateTimeField(
+        source="messages.last.timestamp", read_only=True
+    )
 
     class Meta:
         model = Conversation
-        fields = ["id", "participants", "latest_message"]
+        fields = ["id", "participants", "latest_message", "latest_message_timestamp"]
 
     def get_participants(self, obj):
         return [user.username for user in obj.participants.all()]
