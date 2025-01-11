@@ -357,6 +357,7 @@ def admin_dashboard(request):
                 "hourly_rate": str(app.hourly_rate),
                 "logo": app.logo.url if app.logo else None,
                 "status": app.status,
+                "email": user.email,
             })
         except User.DoesNotExist:
             # Log or handle missing user case

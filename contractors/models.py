@@ -277,4 +277,5 @@ class ContractorApplication(models.Model):
     status = models.CharField(max_length=20, choices=[("Pending", "Pending"), ("Approved", "Approved"), ("Rejected", "Rejected")], default="Pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    email = models.EmailField(max_length=255, default="test@gmail.com")
 
