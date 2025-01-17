@@ -24,11 +24,11 @@ class User(AbstractUser):
 # Contractor model linked to User
 class Contractor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='contractor_profile')
-    job_type = models.CharField(max_length=100)
-    experience_years = models.IntegerField(default=0)
+    job_type = models.CharField(max_length=100, null=True, blank=True)
+    experience_years = models.IntegerField(default=0, null=True, blank=True)
     rating = models.FloatField(null=True, blank=True)
-    total_ratings_count = models.IntegerField(default=0)
-    total_ratings_sum = models.IntegerField(default=0)
+    total_ratings_count = models.IntegerField(default=0, null=True, blank=True)
+    total_ratings_sum = models.IntegerField(default=0, null=True, blank=True)
     profile_description = models.TextField(blank=True, null=True)
     picture = models.ImageField(upload_to='contractor_pictures/', blank=True, null=True)  # Optional picture
     location = models.CharField(max_length=255, blank=True, null=True)  # Optional location
@@ -279,3 +279,15 @@ class ContractorApplication(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     email = models.EmailField(max_length=255, default="test@gmail.com")
 
+
+
+class Tutorials(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    video = models.FileField(upload_to="tutorials/videos/")
+    thumbnail = models.ImageField(upload_to="tutorials/thumbnails/")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
