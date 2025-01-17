@@ -497,6 +497,7 @@ def get_user_info(request):
             contractor = Contractor.objects.get(user=user)
             contractor_info = {
                 'logo': contractor.logo.url if contractor.logo else None,
+                'location': contractor.location if contractor.location else None,
             }
         except Contractor.DoesNotExist:
             contractor_info = {'logo': None}
@@ -508,6 +509,7 @@ def get_user_info(request):
         'first_name': user.first_name,
         'last_name': user.last_name,
         'type': user.user_type,
+  
         **(contractor_info or {}),  # Add contractor-specific info if available
     })
 
