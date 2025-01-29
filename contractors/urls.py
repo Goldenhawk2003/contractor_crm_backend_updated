@@ -64,6 +64,10 @@ urlpatterns = [
     path('quiz/add-question/', views.add_question, name='add_question'),
     path('quiz/delete-question/<int:question_id>/', views.delete_question, name='delete_question'),
     path('quiz/questions/', views.list_questions, name='list_questions'),
+    path('tutorials/', views.TutorialListCreateView.as_view(), name='tutorials-list'),
+    path('tutorials/<int:pk>/', views.TutorialDetailView.as_view(), name='tutorial-detail'),
+
+
 ]
 
 if settings.DEBUG:

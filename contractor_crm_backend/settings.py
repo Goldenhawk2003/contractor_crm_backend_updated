@@ -196,6 +196,11 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+     "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FormParser",
+    ],
 }
 
 LOGIN_URL = '/api/login/'
@@ -222,7 +227,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 LOGIN_REDIRECT_URL = '/home/'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

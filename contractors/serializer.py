@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation,User
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation,User, Tutorials
 
 
 # Serializer for Contractor model
@@ -101,3 +101,8 @@ class SendContractSerializer(serializers.Serializer):
             raise serializers.ValidationError({"clientUsername": "Client not found."})
 
         return data
+    
+class TutorialsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tutorials
+        fields = '__all__' # This will include all fields from the Tutorials model

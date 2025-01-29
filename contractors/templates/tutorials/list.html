@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tutorials</title>
+</head>
+<body>
+    <h1>Uploaded Tutorials</h1>
+    <a href="{% url 'upload_tutorial' %}">Upload New Tutorial</a>
+    <br><br>
+    {% for tutorial in tutorials %}
+        <div>
+            <h2>{{ tutorial.title }}</h2>
+            <p>{{ tutorial.description }}</p>
+            <img src="{{ tutorial.thumbnail.url }}" alt="Thumbnail" width="200">
+            <br>
+            <video width="320" height="240" controls>
+                <source src="{{ tutorial.video.url }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <hr>
+    {% endfor %}
+</body>
+</html>

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest, ContractorApplication, ClientQuizResponse
-from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer, ServiceRequestSerializer, SendContractSerializer
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest, ContractorApplication, ClientQuizResponse, Tutorials
+from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer, ServiceRequestSerializer, SendContractSerializer, TutorialsSerializer
 from .models import FormResponse, Quiz
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
@@ -52,7 +52,7 @@ from rest_framework.parsers import JSONParser
 from django.core.exceptions import ObjectDoesNotExist
 from collections import defaultdict
 from django.db.models import Max
-
+from rest_framework import generics
 # Function to suggest a contractor based on the client's answer
 def suggest_contractor_based_on_answer(answer):
     # Match contractors based on the client's answer
@@ -1037,3 +1037,15 @@ def logout_view(request):
         logout(request)  # Clears the session
         return JsonResponse({"message": "Logged out successfully"}, status=200)
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+class TutorialListCreateView(generics.ListCreateAPIView):
+    queryset = Tutorials.objects.all().order_by("-created_at")
+    serializer_class = TutorialsSerializer
+    permission_classes = [AllowAny] 
+
+# ✅ Retrieve, Update, or Delete a specific tutorial
+class TutorialDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Tutorials.objects.all()
+    serializer_class = TutorialsSerializer
+    permission_classes = [AllowAny] 

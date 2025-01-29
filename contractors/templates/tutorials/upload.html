@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Tutorial</title>
+</head>
+<body>
+    <h1>Upload a Tutorial</h1>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Upload</button>
+    </form>
+    <br>
+    <a href="{% url 'tutorials_list' %}">View Tutorials</a>
+</body>
+</html>
