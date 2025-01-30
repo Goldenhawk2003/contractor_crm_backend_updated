@@ -285,9 +285,12 @@ class Tutorials(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     video = models.FileField(upload_to="tutorials/videos/")
-    thumbnail = models.ImageField(upload_to="tutorials/thumbnails/")
+    thumbnail = models.ImageField(upload_to="tutorials/thumbnails/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    likes = models.PositiveIntegerField(default=0)
+    views = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.title

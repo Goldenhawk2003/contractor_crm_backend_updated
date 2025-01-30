@@ -1049,3 +1049,27 @@ class TutorialDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Tutorials.objects.all()
     serializer_class = TutorialsSerializer
     permission_classes = [AllowAny] 
+
+
+
+@api_view(['POST'])
+def like_tutorial(request, pk):
+    """ Increases the like count for a tutorial """
+    try:
+        tutorial = Tutorials.objects.get(pk=pk)
+        tutorial.likes += 1  # Increment likes
+        tutorial.save()
+        return Response({"message": "Like added", "likes": tutorial.likes})
+    except Tutorials.DoesNotExist:
+        return Response({"error": "Tutorial not found"}, status=404)
+    
+@api_view(['POST'])
+def view_tutorial(request, pk):
+    """ Increases the view count when a tutorial is opened """
+    try:
+        tutorial = Tutorials.objects.get(pk=pk)
+        tutorial.views += 1  # Increment views
+        tutorial.save()
+        return Response({"message": "View recorded", "views": tutorial.views})
+    except Tutorials.DoesNotExist:
+        return Response({"error": "Tutorial not found"}, status=404)

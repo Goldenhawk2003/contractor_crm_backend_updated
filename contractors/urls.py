@@ -11,6 +11,8 @@ from django.conf.urls.static import static
 
 
 
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('contractors.urls')),  # Include URLs from the contractors app
@@ -66,6 +68,8 @@ urlpatterns = [
     path('quiz/questions/', views.list_questions, name='list_questions'),
     path('tutorials/', views.TutorialListCreateView.as_view(), name='tutorials-list'),
     path('tutorials/<int:pk>/', views.TutorialDetailView.as_view(), name='tutorial-detail'),
+    path('tutorials/<int:pk>/like/', views.like_tutorial, name="like-tutorial"),
+    path('tutorials/<int:pk>/view/', views.view_tutorial, name="view-tutorial"),
 
 
 ]
