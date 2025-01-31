@@ -1052,14 +1052,33 @@ class TutorialDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 
-@api_view(['POST'])
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated]) 
 def like_tutorial(request, pk):
     """ Increases the like count for a tutorial """
+    """Handle likes and return current like count"""
     try:
         tutorial = Tutorials.objects.get(pk=pk)
-        tutorial.likes += 1  # Increment likes
-        tutorial.save()
-        return Response({"message": "Like added", "likes": tutorial.likes})
+
+        # Handle GET request (return like count)
+        if request.method == "GET":
+            return Response({"likes": tutorial.total_likes()})
+
+        # Handle POST request (toggle like)
+        user = request.user if request.user.is_authenticated else None
+        if user:
+            if user in tutorial.likes.all():
+                tutorial.likes.remove(user)  # Unlike
+                message = "Like removed"
+            else:
+                tutorial.likes.add(user)  # Like
+                message = "Like added"
+        else:
+            message = "Login required to like."
+
+        return Response({"message": message, "likes": tutorial.total_likes()})
+
     except Tutorials.DoesNotExist:
         return Response({"error": "Tutorial not found"}, status=404)
     
