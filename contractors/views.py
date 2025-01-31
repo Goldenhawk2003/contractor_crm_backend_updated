@@ -1049,6 +1049,7 @@ class TutorialDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Tutorials.objects.all()
     serializer_class = TutorialsSerializer
     permission_classes = [AllowAny] 
+    
 
 
 
