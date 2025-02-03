@@ -5,6 +5,8 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from rest_framework_simplejwt.tokens import OutstandingToken
+from django.core.exceptions import ValidationError
+import os
 # Create your models here.
 
 class User(AbstractUser):
@@ -279,12 +281,17 @@ class ContractorApplication(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     email = models.EmailField(max_length=255, default="test@gmail.com")
 
+def validate_video_or_image(value):
+    valid_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.jpg', '.jpeg', '.png', '.gif']
+    ext = os.path.splitext(value.name)[1].lower()
+    if ext not in valid_extensions:
+        raise ValidationError(f"Unsupported file extension: {ext}. Allowed extensions: {', '.join(valid_extensions)}")
 
 
 class Tutorials(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    video = models.FileField(upload_to="tutorials/videos/")
+    video = models.FileField(upload_to="tutorials/videos/", validators=[validate_video_or_image])
     thumbnail = models.ImageField(upload_to="tutorials/thumbnails/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
