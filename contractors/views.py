@@ -53,6 +53,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from collections import defaultdict
 from django.db.models import Max
 from rest_framework import generics
+from rest_framework.parsers import MultiPartParser, FormParser
 # Function to suggest a contractor based on the client's answer
 def suggest_contractor_based_on_answer(answer):
     # Match contractors based on the client's answer
@@ -1043,6 +1044,7 @@ class TutorialListCreateView(generics.ListCreateAPIView):
     queryset = Tutorials.objects.all().order_by("-created_at")
     serializer_class = TutorialsSerializer
     permission_classes = [AllowAny] 
+    parser_classes = [MultiPartParser, FormParser]
 
 # ✅ Retrieve, Update, or Delete a specific tutorial
 class TutorialDetailView(generics.RetrieveUpdateDestroyAPIView):

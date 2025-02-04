@@ -105,4 +105,4 @@ class SendContractSerializer(serializers.Serializer):
 class TutorialsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tutorials
-        fields = '__all__' # This will include all fields from the Tutorials model
+        fields = ['id', 'title', 'description', 'video', 'thumbnail', 'created_at']
