@@ -7,6 +7,7 @@ from django.conf import settings
 from rest_framework_simplejwt.tokens import OutstandingToken
 from django.core.exceptions import ValidationError
 import os
+from django.utils.text import slugify
 # Create your models here.
 
 class User(AbstractUser):
@@ -125,8 +126,8 @@ class Invoice(models.Model):
     amount_due = models.DecimalField(max_digits=10, decimal_places=2)
     amount_due = models.DecimalField(max_digits=10, decimal_places=2)
     issued_at = models.DateTimeField(auto_now_add=True)
-    due_date = models.DateTimeField()  # The date by which payment is due
-    status = models.CharField(max_length=50, default='Unpaid')  # e.g., 'Paid', 'Unpaid', 'Overdue'
+    due_date = models.DateTimeField()  
+    status = models.CharField(max_length=50, default='Unpaid') 
 
     def __str__(self):
         return f"Invoice #{self.id} for Contract #{self.contract.id}"
@@ -147,7 +148,7 @@ class Payment(models.Model):
     
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # Check if the invoice is fully paid
+     
         total_paid = sum(payment.payment_amount for payment in self.invoice.payments.all())
         if total_paid >= self.invoice.amount_due:
             self.invoice.status = 'Paid'
@@ -158,7 +159,7 @@ class Payment(models.Model):
 
 class QuizQuestion(models.Model):
     question_text = models.CharField(max_length=255)
-    job_type_association = models.CharField(max_length=100)  # This ties to the contractor's job type, e.g., 'Plumbing'
+    job_type_association = models.CharField(max_length=100)  
 
     def __str__(self):
         return self.question_text
@@ -166,7 +167,7 @@ class QuizQuestion(models.Model):
 class QuizAnswer(models.Model):
     question = models.ForeignKey(QuizQuestion, related_name='answers', on_delete=models.CASCADE)
     answer_text = models.CharField(max_length=255)
-    job_type = models.CharField(max_length=100)  # This answer is tied to a job type
+    job_type = models.CharField(max_length=100)  
 
     def __str__(self):
         return f"Answer: {self.answer_text} for {self.question.question_text}"
@@ -238,7 +239,7 @@ class Message(models.Model):
 
 class ContractConsent(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="consents") # Assuming each contract has a unique ID
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="consents") 
     consent_given = models.BooleanField(default=False)
     signed_at = models.DateTimeField(auto_now_add=True)
 
@@ -257,7 +258,7 @@ class SentContract(models.Model):
     contractor = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
-        related_name="sent_contracts",  # Unique related_name for contractor
+        related_name="sent_contracts",  
     )
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_contracts')
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
@@ -306,5 +307,39 @@ class Tutorials(models.Model):
 
     def __str__(self):
         return self.title
+    
 
+
+class Blog(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="blogs")
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    image = models.ImageField(upload_to="blogs/images/", blank=True, null=True) 
+    created_at = models.DateTimeField(auto_now_add=True)
+    replies = models.ManyToManyField(User, through="BlogReply", related_name="replies", blank=True)
+    slug = models.SlugField(unique=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.title)
+            unique_slug = base_slug
+            num = 1
+            while Blog.objects.filter(slug=unique_slug).exists():
+                unique_slug = f"{base_slug}-{num}"  # Append numbers to duplicate slugs
+                num += 1
+            self.slug = unique_slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+
+class BlogReply(models.Model):
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Reply by {self.user.username} on {self.blog.title}"
 

@@ -1,13 +1,13 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest, ContractorApplication, ClientQuizResponse, Tutorials
-from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer, ServiceRequestSerializer, SendContractSerializer, TutorialsSerializer
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation, ContractConsent, ServiceRequest, ContractorApplication, ClientQuizResponse, Tutorials, Blog, BlogReply
+from .serializer import ContractorSerializer, ContractSerializer, ClientSerializer, InvoiceSerializer, PaymentSerializer, MessageSerializer, ConversationSerializer, ServiceRequestSerializer, SendContractSerializer, TutorialsSerializer, BlogSerializer, BlogReplySerializer
 from .models import FormResponse, Quiz
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework import status
 from .permissions import IsContractor, IsPaymentOwner, IsContractorOrClientForContract, IsAdminUser, IsClientOrReadOnly, IsContractorOrReadOnly
 from rest_framework import viewsets
@@ -54,17 +54,18 @@ from collections import defaultdict
 from django.db.models import Max
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
-# Function to suggest a contractor based on the client's answer
+
+# this is a scraped view that is supposed to use your quiz answers to suggest a contractor
+# Ultimaltely it was decided that for now a manual selection of a contractor would be better
 def suggest_contractor_based_on_answer(answer):
-    # Match contractors based on the client's answer
     contractor = Contractor.objects.filter(job_type__icontains=answer).first()
     return contractor
 
-# View to handle form submission and contractor matching
+# View to record the client's quiz response
 def submit_quiz_response(request):
     if request.method == 'POST':
         answer = request.POST.get('answer')
-        client = request.user  # Assuming the client is logged in
+        client = request.user  # Assuming the client is logged in otherwise it wont send through
         quiz = Quiz.objects.get(id=request.POST.get('quiz_id'))
 
         # Get contractor suggestion based on the answer
@@ -81,14 +82,15 @@ def submit_quiz_response(request):
         # Render a response or redirect
         return render(request, 'quiz_result.html', {'form_response': form_response})
 
-    return render(request, 'quiz.html') # Assuming you have a quiz form template
+    return render(request, 'quiz.html') # The template was scrapped in order to keep everything on the frontend flowing through react
 
-
+# View to display the quiz questions
 def get_quiz_questions(request):
+    # Fetch all quiz questions
     if request.method == 'GET':
         questions = Quiz.objects.all()
         question_list = []
-
+        # Prepare the questions for JSON response
         for question in questions:
             question_data = {
                 "id": question.id,
@@ -103,6 +105,7 @@ def get_quiz_questions(request):
 
         return JsonResponse({"questions": question_list}, safe=False)
 
+# View to submit a quiz response
 @csrf_exempt
 @login_required
 def submit_quiz_response(request):
@@ -126,14 +129,13 @@ def submit_quiz_response(request):
 
     return JsonResponse({"error": "Invalid request method"}, status=400)
 
-
-
+# View to display the form responses dashboard, in this project form and quiz are used interchangebly
 def form_responses_dashboard(request):
     if request.method == "GET":
         # Query all form responses
         responses = FormResponse.objects.select_related('client', 'quiz', 'contractor_suggestion').all()
 
-        # Group responses by username
+        # Group responses by username to make it easier to display
         grouped_responses = defaultdict(list)
         for response in responses:
             grouped_responses[response.client.username].append({
@@ -153,9 +155,12 @@ def form_responses_dashboard(request):
     # Handle invalid methods
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+# View to add a new question to the quiz (form) from the admin panel on the site
 @csrf_exempt
 def add_question(request):
+    # Only allow POST requests
     if request.method == "POST":
+        # Parse the request data
         try:
             data = json.loads(request.body)
             question_text = data.get("question")
@@ -180,8 +185,9 @@ def add_question(request):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-    return JsonResponse({"error": "Method not allowed."}, status=405)
+    return JsonResponse({"error": "Method not allowed."}, status=405) # If the request method is not POST
 
+# View to delete a question from the quiz (form) from the admin panel on the site
 @csrf_exempt
 def delete_question(request, question_id):
     if request.method == "DELETE":
@@ -194,7 +200,7 @@ def delete_question(request, question_id):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-    return JsonResponse({"error": "Method not allowed."}, status=405)
+    return JsonResponse({"error": "Method not allowed."}, status=405) # If the request method is not DELETE
 
 def list_questions(request):
     if request.method == "GET":
@@ -1095,3 +1101,22 @@ def view_tutorial(request, pk):
         return Response({"message": "View recorded", "views": tutorial.views})
     except Tutorials.DoesNotExist:
         return Response({"error": "Tutorial not found"}, status=404)
+    
+class BlogDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Blog.objects.all()
+    serializer_class = BlogSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+        
+    def get_queryset(self):
+        
+         return Blog.objects.filter(author=self.request.user)
+    
+class BlogListView(generics.ListAPIView):
+    queryset = Blog.objects.all().order_by("-created_at")
+    serializer_class = BlogSerializer
+    permission_classes = [AllowAny] 
+    
+class BlogReplyCreateView(generics.CreateAPIView):
+    queryset = BlogReply.objects.all()
+    serializer_class = BlogReplySerializer
+    permission_classes = [IsAuthenticated]

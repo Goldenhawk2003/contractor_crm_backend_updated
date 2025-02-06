@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import User, Contractor, Contract
-from .models import Client, Review, Quiz, FormResponse, Invoice, Payment, CustomOutstandingToken, Tutorials
+from .models import Client, Review, Quiz, FormResponse, Invoice, Payment, CustomOutstandingToken, Tutorials, Blog
 from django import forms
 from django.contrib import admin
 
@@ -38,7 +38,7 @@ class ContractAdmin(admin.ModelAdmin):
     list_display = ('title', 'sent_at')
     search_fields = ('title',)
 
-
+admin.site.register(Blog)
 admin.site.register(Tutorials)
 admin.site.register(Client, ClientAdmin)
 admin.site.register(User)

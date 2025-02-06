@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation,User, Tutorials
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation,User, Tutorials, Blog
 
 
 # Serializer for Contractor model
@@ -106,3 +106,20 @@ class TutorialsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tutorials
         fields = ['id', 'title', 'description', 'video', 'thumbnail', 'created_at']
+
+
+
+class BlogSerializer(serializers.ModelSerializer):
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Blog
+        
+        fields = ['author', 'title', 'content','created_at', 'replies']
+    def get_replies(self, obj):
+        return [reply.content for reply in obj.blogreply_set.all()]  
+    
+class BlogReplySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Blog
+        fields = ['user','blog', 'content', 'created_at']
