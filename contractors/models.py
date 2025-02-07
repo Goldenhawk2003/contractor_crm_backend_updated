@@ -297,11 +297,16 @@ class Tutorials(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    
+   
     views = models.PositiveIntegerField(default=0)
 
     likes = models.ManyToManyField(User, related_name="liked_tutorials", blank=True)
 
+    tags = models.CharField(max_length=255, blank=True)  # ➜ Store tags as a comma-separated string
+
+    def get_tags(self):
+        return self.tags.split(",") if self.tags else []
+    
     def total_likes(self):
         return self.likes.count()
 

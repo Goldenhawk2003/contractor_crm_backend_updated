@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation,User, Tutorials, Blog
+from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation,User, Tutorials, Blog, BlogReply
 
 
 # Serializer for Contractor model
@@ -105,21 +105,30 @@ class SendContractSerializer(serializers.Serializer):
 class TutorialsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tutorials
-        fields = ['id', 'title', 'description', 'video', 'thumbnail', 'created_at']
+        fields = ['id', 'title', 'description', 'video', 'thumbnail', 'created_at', 'tags']
 
 
 
 class BlogSerializer(serializers.ModelSerializer):
-    replies = serializers.SerializerMethodField()
-
     class Meta:
         model = Blog
-        
-        fields = ['author', 'title', 'content','created_at', 'replies']
+        fields = ['id','title', 'content', 'image', 'created_at', 'replies']
+
+    def create(self, validated_data):
+        validated_data['author'] = self.context['request'].user  # Assign logged-in user
+        return super().create(validated_data)
     def get_replies(self, obj):
         return [reply.content for reply in obj.blogreply_set.all()]  
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url)  # Full URL
+        return None
     
 class BlogReplySerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)  # Show username instead of ID
+    blog = serializers.PrimaryKeyRelatedField(read_only=True)  # Auto-assign blog
+
     class Meta:
-        model = Blog
-        fields = ['user','blog', 'content', 'created_at']
+        model = BlogReply
+        fields = ["id", "blog", "user", "content", "created_at"]

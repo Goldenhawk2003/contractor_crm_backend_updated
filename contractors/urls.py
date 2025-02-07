@@ -70,8 +70,9 @@ urlpatterns = [
     path('tutorials/<int:pk>/', views.TutorialDetailView.as_view(), name='tutorial-detail'),
     path('tutorials/<int:pk>/like/', views.like_tutorial, name="like-tutorial"),
     path('tutorials/<int:pk>/view/', views.view_tutorial, name="view-tutorial"),
-    path("api/blogs/", views.BlogListView.as_view(), name="blog-list"),
+    path("api/blogs/", views.BlogListCreateView.as_view(), name="blog-list"),
     path("api/blogs/<int:pk>/", views.BlogDetailView.as_view(), name="blog-detail"),
+    path("api/blogs/<int:pk>/reply/", views.BlogReplyCreateView.as_view(), name="blog-reply"),
 
 
 ]

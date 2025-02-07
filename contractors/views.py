@@ -969,6 +969,8 @@ def handle_application(request, application_id):
 
     if action == "accept":
         try:
+            application.user.is_active = True
+            application.user.save()
             # Create a Contractor from the application
             Contractor.objects.create(
                 user=application.user,
@@ -976,6 +978,8 @@ def handle_application(request, application_id):
                 location=application.location,
                 hourly_rate=application.hourly_rate,
                 logo=application.logo,
+      
+        
             )
             # Delete the application after successful acceptance
             application.delete()
@@ -996,7 +1000,8 @@ def approve_contractor(request, id):
     try:
         # Get the contractor application by ID
         application = ContractorApplication.objects.get(id=id)
-
+        application.user.is_active = True
+        application.user.save()
         # Create a new contractor and delete the application
         Contractor.objects.create(
             user=application.user,
@@ -1004,6 +1009,7 @@ def approve_contractor(request, id):
             location=application.location,
             hourly_rate=application.hourly_rate,
             logo=application.logo,
+
         )
         application.delete()
         return Response({"message": "Contractor approved successfully."}, status=status.HTTP_200_OK)
@@ -1111,12 +1117,17 @@ class BlogDetailView(generics.RetrieveUpdateDestroyAPIView):
         
          return Blog.objects.filter(author=self.request.user)
     
-class BlogListView(generics.ListAPIView):
+class BlogListCreateView(generics.ListCreateAPIView):  # Supports GET & POST
     queryset = Blog.objects.all().order_by("-created_at")
     serializer_class = BlogSerializer
-    permission_classes = [AllowAny] 
+    permission_classes = [IsAuthenticatedOrReadOnly]
     
 class BlogReplyCreateView(generics.CreateAPIView):
     queryset = BlogReply.objects.all()
     serializer_class = BlogReplySerializer
     permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        blog_id = self.kwargs.get("pk")  # Get blog ID from URL
+        blog = get_object_or_404(Blog, pk=blog_id)
+        serializer.save(blog=blog, user=self.request.user) 
