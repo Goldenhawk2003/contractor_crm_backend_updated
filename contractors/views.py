@@ -505,6 +505,8 @@ def get_user_info(request):
             contractor_info = {
                 'logo': contractor.logo.url if contractor.logo else None,
                 'location': contractor.location if contractor.location else None,
+                'rating': contractor.rating if contractor.rating else None,
+                'description': contractor.profile_description if contractor.profile_description else None,
             }
         except Contractor.DoesNotExist:
             contractor_info = {'logo': None}
