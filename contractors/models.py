@@ -296,6 +296,7 @@ class Tutorials(models.Model):
     thumbnail = models.ImageField(upload_to="tutorials/thumbnails/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+   
 
    
     views = models.PositiveIntegerField(default=0)

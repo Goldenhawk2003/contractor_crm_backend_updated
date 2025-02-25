@@ -1057,14 +1057,18 @@ def logout_view(request):
 class TutorialListCreateView(generics.ListCreateAPIView):
     queryset = Tutorials.objects.all().order_by("-created_at")
     serializer_class = TutorialsSerializer
-    permission_classes = [AllowAny] 
+    permission_classes = [IsAuthenticatedOrReadOnly]
     parser_classes = [MultiPartParser, FormParser]
 
-# ✅ Retrieve, Update, or Delete a specific tutorial
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
+
+
 class TutorialDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Tutorials.objects.all()
     serializer_class = TutorialsSerializer
     permission_classes = [AllowAny] 
+
     
 
 
