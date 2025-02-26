@@ -73,6 +73,7 @@ urlpatterns = [
     path("api/blogs/", views.BlogListCreateView.as_view(), name="blog-list"),
     path("api/blogs/<int:pk>/", views.BlogDetailView.as_view(), name="blog-detail"),
     path("api/blogs/<int:pk>/reply/", views.BlogReplyCreateView.as_view(), name="blog-reply"),
+     path('contractors/<int:contractor_id>/tutorials/', views.ContractorTutorialsView.as_view(), name='contractor-tutorials'),
 
 
 ]

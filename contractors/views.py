@@ -1071,9 +1071,25 @@ class TutorialDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [AllowAny] 
 
     
+class ContractorTutorialsView(generics.ListAPIView):
+    serializer_class = TutorialsSerializer
+    permission_classes = [AllowAny]
 
+    def get_queryset(self):
+        contractor_id = self.kwargs["contractor_id"]
 
+        # 🔥 Find the user associated with the contractor
+        try:
+            contractor = Contractor.objects.get(id=contractor_id)
+            user_id = contractor.user_id  # The user linked to this contractor
+        except Contractor.DoesNotExist:
+            return Tutorials.objects.none()
 
+        # 🔥 Fetch tutorials using the user ID instead of contractor ID
+        queryset = Tutorials.objects.filter(uploaded_by_id=user_id)
+        print("Filtered Tutorials:", queryset)  # Debugging log
+        return queryset
+    
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated]) 
