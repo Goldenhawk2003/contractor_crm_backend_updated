@@ -1053,7 +1053,7 @@ def logout_view(request):
         return JsonResponse({"message": "Logged out successfully"}, status=200)
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class TutorialListCreateView(generics.ListCreateAPIView):
     queryset = Tutorials.objects.all().order_by("-created_at")
     serializer_class = TutorialsSerializer
@@ -1062,6 +1062,7 @@ class TutorialListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(uploaded_by=self.request.user)
+        
 
 
 class TutorialDetailView(generics.RetrieveUpdateDestroyAPIView):

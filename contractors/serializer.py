@@ -103,9 +103,12 @@ class SendContractSerializer(serializers.Serializer):
         return data
     
 class TutorialsSerializer(serializers.ModelSerializer):
+    uploaded_by = serializers.ReadOnlyField(source="uploaded_by.username")
     class Meta:
         model = Tutorials
-        fields = ['id', 'title', 'description', 'video', 'thumbnail', 'created_at', 'tags']
+        fields = ['id', 'title', 'description', 'video', 'thumbnail', 'created_at', 'tags',  'uploaded_by']
+
+       
 
 
 
