@@ -565,6 +565,7 @@ class MessageListView(APIView):
     def get(self, request, conversation_id):
         try:
             conversation = Conversation.objects.get(id=conversation_id, participants=request.user)
+            conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
             serializer = MessageSerializer(conversation.messages.all(), many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Conversation.DoesNotExist:
@@ -605,6 +606,10 @@ class CreateMessageView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
+@login_required
+def unread_messages_count(request):
+    unread_count = Message.objects.filter(conversation__participants=request.user, is_read=False).exclude(sender=request.user).count()
+    return JsonResponse({"unread_count": unread_count})
 
 @method_decorator(csrf_exempt, name='dispatch')  # Disable CSRF for this view
 class ContactView(APIView):
