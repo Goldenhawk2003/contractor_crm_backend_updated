@@ -54,6 +54,7 @@ from collections import defaultdict
 from django.db.models import Max
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.core.mail import EmailMultiAlternatives
 
 # this is a scraped view that is supposed to use your quiz answers to suggest a contractor
 # Ultimaltely it was decided that for now a manual selection of a contractor would be better
@@ -933,25 +934,67 @@ def reply_to_conversation(request, conversation_id):
     recipient = conversation.participants.exclude(id=request.user.id).first()
 
     if recipient and recipient.email:  # Ensure the recipient has an email
-        subject = "New Reply on Elite Craft"
-        email_message = (
-            f"Hello {recipient.username},\n\n"
-            f"{request.user.username} has replied to your conversation:\n\n"
-            f"\"{content}\"\n\n"
-            "Please log in to view and reply."
-        )
+        subject = "📩 New Reply on Elite Craft Contractors"
+
+        # Company logo URL (use a direct link from your website or cloud storage)
+        company_logo_url = "https://goldenhawk2003.github.io/My_Website/logos/IMG_2582.PNG"  # Replace with actual logo URL
+
+        # Email HTML content
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+            <div style="max-width: 600px; background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+                <div style="text-align: center;">
+                    <img src="{company_logo_url}" alt="Elite Craft Contractors" style="max-width: 150px;">
+                </div>
+                <h2 style="color: #1b3656; text-align: center;">You've Received a New Reply!</h2>
+                <p>Hello <strong>{recipient.username}</strong>,</p>
+                <p><strong>{request.user.username}</strong> has replied to your conversation:</p>
+                <blockquote style="background: #f8f8f8; padding: 15px; border-left: 5px solid #1b3656; font-style: italic;">
+                    {content}
+                </blockquote>
+                <p style="text-align: center;">
+                    <a href="https://yourwebsite.com/conversation/{conversation.id}/" 
+                       style="background: #1b3656; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                        View Conversation
+                    </a>
+                </p>
+                <p>Thank you for using <strong>Elite Craft Contractors</strong>!</p>
+                <p style="font-size: 12px; color: #888888; text-align: center;">
+                    This is an automated email. Please do not reply.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Plain text version (fallback for email clients that don’t support HTML)
+        text_content = f"""
+        Hello {recipient.username},
+
+        {request.user.username} has replied to your conversation:
+
+        "{content}"
+
+        Please log in to view and reply: https://yourwebsite.com/conversation/{conversation.id}/
+
+        Thank you for using Elite Craft Contractors!
+        """
 
         try:
-            send_mail(
-                subject,
-                email_message,
-                'your-email@example.com',  # Replace with your sender email
-                [recipient.email],  # Recipient's email
-                fail_silently=False,
+            # Create the email message
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,  # Plain text content
+                from_email='your-email@example.com',  # Replace with your sender email
+                to=[recipient.email],  # Recipient email
             )
-            print(f"Email sent successfully to {recipient.email}")
+            email.attach_alternative(html_content, "text/html")  # Attach HTML version
+            email.send()
+
+            print(f"📩 HTML Email sent successfully to {recipient.email}")
         except Exception as e:
-            print(f"Email sending failed: {str(e)}")
+            print(f"❌ Email sending failed: {str(e)}")
 
     return Response({"message": "Reply sent successfully.", "id": message.id}, status=201)
 
