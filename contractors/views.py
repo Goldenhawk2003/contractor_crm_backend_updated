@@ -580,27 +580,60 @@ class CreateMessageView(APIView):
         content = request.data.get("content")
 
         if not recipient_id or not content:
-            return Response({"error": "Recipient and content are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Recipient and content are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             recipient = User.objects.get(id=recipient_id)
         except User.DoesNotExist:
-            return Response({"error": "Recipient not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Recipient not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        # Check if a conversation exists
-        conversation = Conversation.objects.filter(participants=sender).filter(participants=recipient).first()
+        # Check if a conversation exists between sender and recipient
+        conversation = Conversation.objects.filter(participants=sender)\
+                                           .filter(participants=recipient).first()
 
         # If no conversation exists, create a new one
         if not conversation:
             conversation = Conversation.objects.create()
-            conversation.participants.set([sender, recipient])  # Assign participants
-
+            conversation.participants.set([sender, recipient])
+        
         # Create the message
         message = Message.objects.create(
             conversation=conversation,
             sender=sender,
             content=content,
         )
+
+        # Retrieve recipient email
+        recipient_email = recipient.email
+
+        if recipient_email:
+            print(f"Recipient email: {recipient_email}")  # Debugging log
+
+            subject = "New Message on Elite Craft"
+            email_message = (
+                f"Hello {recipient.username},\n\n"
+                f"You have received a new message from {sender.username}:\n\n"
+                f"\"{content}\"\n\n"
+                "Please log in to view and reply."
+            )
+
+            try:
+                send_mail(
+                        subject,
+                        email_message,
+                        'your-email@example.com',  # Uses DEFAULT_FROM_EMAIL from settings.py
+                        [recipient_email],  # Use the actual variable
+                        fail_silently=False,    
+                    )
+                print("Email sent successfully!")
+            except Exception as e:
+                print(f"Email sending failed: {e}")
 
         serializer = MessageSerializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -896,6 +929,29 @@ def reply_to_conversation(request, conversation_id):
         sender=request.user,
         content=content,
     )
+
+    recipient = conversation.participants.exclude(id=request.user.id).first()
+
+    if recipient and recipient.email:  # Ensure the recipient has an email
+        subject = "New Reply on Elite Craft"
+        email_message = (
+            f"Hello {recipient.username},\n\n"
+            f"{request.user.username} has replied to your conversation:\n\n"
+            f"\"{content}\"\n\n"
+            "Please log in to view and reply."
+        )
+
+        try:
+            send_mail(
+                subject,
+                email_message,
+                'your-email@example.com',  # Replace with your sender email
+                [recipient.email],  # Recipient's email
+                fail_silently=False,
+            )
+            print(f"Email sent successfully to {recipient.email}")
+        except Exception as e:
+            print(f"Email sending failed: {str(e)}")
 
     return Response({"message": "Reply sent successfully.", "id": message.id}, status=201)
 
