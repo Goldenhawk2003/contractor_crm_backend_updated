@@ -480,6 +480,7 @@ def register_user(request):
         return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @csrf_exempt
+@api_view(['POST'])
 def login_view(request):
     if request.method == "POST":
         data = json.loads(request.body)

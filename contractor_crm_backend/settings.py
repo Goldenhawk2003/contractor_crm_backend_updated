@@ -30,7 +30,7 @@ BASE_DIR =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'django-insecure-&dse1c2s@8zio8t5^)lsy$af^*8(+#@h^#eptk^e3xva=#xqk*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['ecc-backend-8684636373f0.herokuapp.com','127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app']
 
@@ -48,6 +48,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
+    "https://ecc-frontend-0ce8d42f6dc5.herokuapp.com",
 ]
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Default session engine
