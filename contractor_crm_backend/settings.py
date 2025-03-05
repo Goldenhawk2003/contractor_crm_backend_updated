@@ -40,6 +40,7 @@ AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where Us
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    "https://ecc-frontend-0ce8d42f6dc5.herokuapp.com",
 ]
 CSRF_COOKIE_NAME = 'csrftoken'
 CORS_ALLOW_ALL_ORIGINS = True
