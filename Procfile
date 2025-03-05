@@ -1,0 +1,1 @@
+web: gunicorn contractor_crm_backend.wsgi --log-file -
