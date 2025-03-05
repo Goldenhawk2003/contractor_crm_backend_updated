@@ -56,6 +56,7 @@ from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.mail import EmailMultiAlternatives
 from django.views.decorators.csrf import ensure_csrf_cookie
+
 # this is a scraped view that is supposed to use your quiz answers to suggest a contractor
 # Ultimaltely it was decided that for now a manual selection of a contractor would be better
 def suggest_contractor_based_on_answer(answer):
@@ -479,7 +480,7 @@ def register_user(request):
         logger.error(f"Unexpected error: {str(e)}")
         return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@ensure_csrf_cookie
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -495,14 +496,11 @@ def login_view(request):
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
-@login_required  # Ensures only authenticated users can access this view
+# Ensures only authenticated users can access this view
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_user_info(request):
-   
-   
-    permission_classes = [IsAuthenticated]
     user = request.user
-
     # Check if the user is a contractor and fetch additional info if they are
     contractor_info = None
     if user.user_type == "professional":  # Assuming "professional" indicates contractors
@@ -537,8 +535,8 @@ def user_info(request):
         "is_superuser": user.is_superuser,  # Include this field
     })
 
+@ensure_csrf_cookie  # Ensures the CSRF cookie is sent to the client
 def csrf_token_view(request):
-    # Generates a new CSRF token for the client
     token = get_token(request)
     return JsonResponse({'csrfToken': token})
 

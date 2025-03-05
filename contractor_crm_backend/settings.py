@@ -30,7 +30,7 @@ BASE_DIR =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'django-insecure-&dse1c2s@8zio8t5^)lsy$af^*8(+#@h^#eptk^e3xva=#xqk*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False 
+DEBUG = False
 
 ALLOWED_HOSTS = ['ecc-backend-8684636373f0.herokuapp.com','127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app']
 
@@ -39,18 +39,31 @@ AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where Us
 
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    "https://ecc-frontend-0ce8d42f6dc5.herokuapp.com",
-]
-CSRF_COOKIE_NAME = 'csrftoken'
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
+
+   "https://ecc-frontend-0ce8d42f6dc5.herokuapp.com",
+ ]
+
+
+CORS_ALLOW_CREDENTIALS = True  # Required for cookies to be sent
+CORS_ALLOW_ALL_ORIGINS = False  # Keep it False to avoid conflicts
+SESSION_COOKIE_SECURE = True  # Ensures secure cookies over HTTPS
+CSRF_COOKIE_SECURE = True  # Ensures CSRF cookie is only sent over HTTPS
+SESSION_COOKIE_SAMESITE = "None"  # Required for cross-origin authentication
+CSRF_COOKIE_SAMESITE = "None"  
+CSRF_COOKIE_HTTPONLY = False
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
+
+    "https://ecc-frontend-0ce8d42f6dc5.herokuapp.com",
+    "https://ecc-backend-8684636373f0.herokuapp.com",
 ]
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Default session engine
+SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies" # Default session engine
+SESSION_COOKIE_SECURE = True  # Secure cookies only for HTTPS
+SESSION_COOKIE_HTTPONLY = True  # Protect against JavaScript access
+SESSION_COOKIE_SAMESITE = "None"  # Required for cross-origin auth
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep sessions active
+SESSION_COOKIE_AGE = 1209600 
 SESSION_COOKIE_NAME = 'sessionid'  # The name of the session cookie
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False 
 # Application definition
@@ -74,17 +87,15 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Place CORS middleware at the top
+    'django.contrib.sessions.middleware.SessionMiddleware',  # Ensure session works first
     'django.middleware.common.CommonMiddleware',
-
-    
+    'django.middleware.csrf.CsrfViewMiddleware',  # CSRF middleware must be after sessions
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = False 
@@ -182,16 +193,14 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Keep JWT for token-based authentication if needed
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-     "DEFAULT_PARSER_CLASSES": [
-        "rest_framework.parsers.JSONParser",
-        "rest_framework.parsers.MultiPartParser",
-        "rest_framework.parsers.FormParser",
-    ],
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',  # Remove Browsable API to avoid CSRF issues
+    ),
 }
 
 LOGIN_URL = '/api/login/'
@@ -211,9 +220,6 @@ CHANNEL_LAYERS = {
     },
 }
 
-
-SESSION_COOKIE_AGE = 1209600  # Two weeks in seconds (2 weeks)
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 LOGIN_REDIRECT_URL = '/home/'
 
