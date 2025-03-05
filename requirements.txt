@@ -50,8 +50,6 @@ h2==4.2.0
 hpack==4.1.0
 hyperframe==6.1.0
 hyperlink==21.0.0
-ibm-cloud-sdk-core==3.22.1
-ibm-platform-services==0.59.1
 id==1.5.0
 idna==3.10
 in-toto-attestation==0.9.3
@@ -117,7 +115,6 @@ rfc3161-client==0.1.2
 rfc8785==0.1.4
 rich==13.9.4
 rustworkx==0.15.1
-scikit-learn==1.5.2
 scipy==1.14.1
 seaborn==0.13.2
 securesystemslib==1.2.0
