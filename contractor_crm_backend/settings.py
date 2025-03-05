@@ -46,10 +46,10 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True  # Required for cookies to be sent
 CORS_ALLOW_ALL_ORIGINS = False  # Keep it False to avoid conflicts
-SESSION_COOKIE_SECURE = True  # Ensures secure cookies over HTTPS
-CSRF_COOKIE_SECURE = True  # Ensures CSRF cookie is only sent over HTTPS
-SESSION_COOKIE_SAMESITE = "None"  # Required for cross-origin authentication
-CSRF_COOKIE_SAMESITE = "None"  
+SESSION_COOKIE_SECURE = False  # Ensures secure cookies over HTTPS
+CSRF_COOKIE_SECURE = False  # Ensures CSRF cookie is only sent over HTTPS
+SESSION_COOKIE_SAMESITE = "Lax"  # Required for cross-origin authentication
+CSRF_COOKIE_SAMESITE = "Lax"  
 CSRF_COOKIE_HTTPONLY = False
 
 CSRF_TRUSTED_ORIGINS = [

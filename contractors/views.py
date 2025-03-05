@@ -482,7 +482,6 @@ def register_user(request):
 
 @csrf_exempt
 @api_view(['POST'])
-@permission_classes([AllowAny])
 def login_view(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -497,8 +496,8 @@ def login_view(request):
 
 
 # Ensures only authenticated users can access this view
+@csrf_exempt 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_user_info(request):
     user = request.user
     # Check if the user is a contractor and fetch additional info if they are
