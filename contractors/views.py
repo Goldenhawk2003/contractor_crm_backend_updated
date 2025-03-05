@@ -55,7 +55,7 @@ from django.db.models import Max
 from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.mail import EmailMultiAlternatives
-
+from django.views.decorators.csrf import ensure_csrf_cookie
 # this is a scraped view that is supposed to use your quiz answers to suggest a contractor
 # Ultimaltely it was decided that for now a manual selection of a contractor would be better
 def suggest_contractor_based_on_answer(answer):
@@ -479,7 +479,7 @@ def register_user(request):
         logger.error(f"Unexpected error: {str(e)}")
         return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@csrf_exempt
+@ensure_csrf_cookie
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -496,7 +496,10 @@ def login_view(request):
 
 
 @login_required  # Ensures only authenticated users can access this view
+@api_view(['GET'])
 def get_user_info(request):
+   
+   
     permission_classes = [IsAuthenticated]
     user = request.user
 
