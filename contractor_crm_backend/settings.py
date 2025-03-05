@@ -91,7 +91,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Place CORS middleware at the top
     'django.contrib.sessions.middleware.SessionMiddleware',  # Ensure session works first
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',  # CSRF middleware must be after sessions
+    #'django.middleware.csrf.CsrfViewMiddleware',  # CSRF middleware must be after sessions
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -196,7 +196,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',  # Remove Browsable API to avoid CSRF issues
