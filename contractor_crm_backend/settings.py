@@ -57,7 +57,8 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOW_CREDENTIALS = True  # Required for cookies to be sent
 CORS_ALLOW_ALL_ORIGINS = True  # Keep it False to avoid conflicts
 SESSION_COOKIE_SECURE = True  # Ensures secure cookies over HTTPS
- # Ensures CSRF cookie is only sent over HTTPS
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = False # Ensures CSRF cookie is only sent over HTTPS
 SESSION_COOKIE_SAMESITE = "None"  # Required for cross-origin authentication
 CSRF_COOKIE_SAMESITE = "None"  
 
