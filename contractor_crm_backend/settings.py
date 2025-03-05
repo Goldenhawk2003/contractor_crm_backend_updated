@@ -119,16 +119,7 @@ ASGI_APPLICATION = 'contractor_crm_backend.asgi.application'
 DATABASES = {
     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'contractor_crm_db',    # Name of the PostgreSQL database you created
-        'USER': 'crm_user',          # PostgreSQL username
-        'PASSWORD': 'ammar2003',  # PostgreSQL password
-        'HOST': 'localhost',             # Database host, 'localhost' if running locally
-        'PORT': '5432',                  # PostgreSQL port (default is 5432)
-    }
-}
+
 
 
 
@@ -176,7 +167,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
@@ -243,15 +234,6 @@ TOKEN_URL = "https://account-d.docusign.com/oauth/token"
 DOCUSIGN_BASE_PATH = "https://demo.docusign.net/restapi"  # Use production URL in production
 CLIENT_ID = "a0769e40-cd97-4e92-a79b-8021247aeaf3"
 CLIENT_SECRET = "0f55b6ae-77d3-4271-b58c-8a757095da53"
-REDIRECT_URI = "http://localhost:8000/docusign/callback"
-
-DOCUSIGN = {
-    "INTEGRATION_KEY": "a0769e40-cd97-4e92-a79b-8021247aeaf3",
-    "USER_ID": "31467551",
-    "PRIVATE_KEY": "0f55b6ae-77d3-4271-b58c-8a757095da53",
-    "BASE_PATH": "http://localhost:8000/docusign/callback",  # Sandbox
-    "ACCOUNT_ID": "31467551",
-}
 
 STRIPE_SECRET_KEY = 'sk_test_51QSiGBF7wkMLsTtpa5iRWHQjKTh3EhBrCJMHnqlDaGNVgN7lUx8SYXHgwowaqGRMFwRenqjm1lF0dWQdKw6BiI3V00UNbrSWcd'
 STRIPE_PUBLISHABLE_KEY = 'pk_test_51QSiGBF7wkMLsTtpBBzTCQOPHg8otgHraZEnvAO7Tqv1U6vdERKvFIjAfdykTzcZqE8z50u7N69Qspz4Sk4gpbvm00bGltNgjo'
