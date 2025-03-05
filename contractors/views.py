@@ -481,6 +481,7 @@ def register_user(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
     if request.method == "POST":
         data = json.loads(request.body)
