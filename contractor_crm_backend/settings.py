@@ -117,9 +117,7 @@ ASGI_APPLICATION = 'contractor_crm_backend.asgi.application'
 
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL')
-    )
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
 DATABASES = {
     'default': {
@@ -131,16 +129,7 @@ DATABASES = {
         'PORT': '5432',                  # PostgreSQL port (default is 5432)
     }
 }
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
-    }
-}
+
 
 
 # Password validation
