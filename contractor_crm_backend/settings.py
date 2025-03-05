@@ -30,7 +30,7 @@ BASE_DIR =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'django-insecure-&dse1c2s@8zio8t5^)lsy$af^*8(+#@h^#eptk^e3xva=#xqk*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['ecc-backend-8684636373f0.herokuapp.com','127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app']
 
@@ -43,14 +43,24 @@ CORS_ALLOWED_ORIGINS = [
    "https://ecc-frontend-0ce8d42f6dc5.herokuapp.com",
  ]
 
+CORS_ALLOW_HEADERS = [
+    'authorization',
+    'content-type',
+    'x-requested-with',
+    'accept',
+    'origin',
+    'x-csrftoken',
+    'x-xsrf-token'
+]
+
 
 CORS_ALLOW_CREDENTIALS = True  # Required for cookies to be sent
 CORS_ALLOW_ALL_ORIGINS = False  # Keep it False to avoid conflicts
-SESSION_COOKIE_SECURE = False  # Ensures secure cookies over HTTPS
-CSRF_COOKIE_SECURE = False  # Ensures CSRF cookie is only sent over HTTPS
-SESSION_COOKIE_SAMESITE = "Lax"  # Required for cross-origin authentication
-CSRF_COOKIE_SAMESITE = "Lax"  
-CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SECURE = True  # Ensures secure cookies over HTTPS
+ # Ensures CSRF cookie is only sent over HTTPS
+SESSION_COOKIE_SAMESITE = "None"  # Required for cross-origin authentication
+CSRF_COOKIE_SAMESITE = "None"  
+
 
 CSRF_TRUSTED_ORIGINS = [
 
@@ -91,7 +101,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Place CORS middleware at the top
     'django.contrib.sessions.middleware.SessionMiddleware',  # Ensure session works first
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',  # CSRF middleware must be after sessions
+    'django.middleware.csrf.CsrfViewMiddleware',  # CSRF middleware must be after sessions
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -196,7 +206,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',  # Remove Browsable API to avoid CSRF issues
