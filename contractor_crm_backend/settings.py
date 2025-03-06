@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-&dse1c2s@8zio8t5^)lsy$af^*8(+#@h^#eptk^e3xva=#xqk*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app', 'ecc-backend-31b43c38f51f.herokuapp.com']
 
 
 AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where User is defined
