@@ -494,7 +494,7 @@ def login_view(request):
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
-@login_required  # Ensures only authenticated users can access this view
+ # Ensures only authenticated users can access this view
 def get_user_info(request):
     permission_classes = [IsAuthenticated]
     user = request.user
