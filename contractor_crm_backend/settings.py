@@ -15,7 +15,7 @@ from celery.schedules import crontab
 from datetime import timedelta
 from decouple import config
 import os
-
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,6 +38,7 @@ AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where Us
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    "https://ecc-frontend-b2cf36d48aa5.herokuapp.com",
 ]
 CSRF_COOKIE_NAME = 'csrftoken'
 CORS_ALLOW_ALL_ORIGINS = True
@@ -45,6 +46,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
+    "https://ecc-frontend-b2cf36d48aa5.herokuapp.com",
 ]
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Default session engine
@@ -111,24 +113,7 @@ ASGI_APPLICATION = 'contractor_crm_backend.asgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'contractor_crm_db',    # Name of the PostgreSQL database you created
-        'USER': 'crm_user',          # PostgreSQL username
-        'PASSWORD': 'ammar2003',  # PostgreSQL password
-        'HOST': 'localhost',             # Database host, 'localhost' if running locally
-        'PORT': '5432',                  # PostgreSQL port (default is 5432)
-    }
-}
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
-    }
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
 
 
