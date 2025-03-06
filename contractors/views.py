@@ -481,91 +481,49 @@ def register_user(request):
         return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @csrf_exempt
-@api_view(['POST'])
 def login_view(request):
-    try:
+    if request.method == "POST":
         data = json.loads(request.body)
         username = data.get("username")
         password = data.get("password")
-
-        if not username or not password:
-            return JsonResponse({"error": "Username and password required"}, status=400)
-
-        user = authenticate(username=username, password=password)
-
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-
-            response = JsonResponse({
-                "message": "Login successful",
-                "session_id": request.session.session_key
-            })
-
-            # ✅ Ensure sessionid is set
-            response.set_cookie(
-                key="sessionid",
-                value=request.session.session_key,
-                httponly=True,
-                samesite="None",
-                secure=True
-            )
-
-            # ✅ Ensure CSRF token is refreshed
-            response.set_cookie(
-                key="csrftoken",
-                value=get_token(request),
-                httponly=False,
-                samesite="None",
-                secure=True
-            )
-
-            return response
-
-        return JsonResponse({"error": "Invalid credentials"}, status=400)
-
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON format"}, status=400)
-
-    except Exception as e:
-        return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
+            return JsonResponse({"success": "Logged in successfully."}, status=200)
+        return JsonResponse({"error": "Invalid credentials."}, status=400)
+    return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
-# Ensures only authenticated users can access this view
- 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])  # Ensures only authenticated users can access
+@login_required  # Ensures only authenticated users can access this view
 def get_user_info(request):
+    permission_classes = [IsAuthenticated]
     user = request.user
 
-    # Check if the user is authenticated
-    if not user.is_authenticated:
-        return JsonResponse({"error": "User not authenticated"}, status=401)
-
-    # Default response data
-    response_data = {
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "type": getattr(user, "user_type", "unknown"),  # Avoids AttributeError
-    }
-
-    # If user is a contractor, fetch additional info
-    if getattr(user, "user_type", None) == "professional":
+    # Check if the user is a contractor and fetch additional info if they are
+    contractor_info = None
+    if user.user_type == "professional":  # Assuming "professional" indicates contractors
         try:
             contractor = Contractor.objects.get(user=user)
-            response_data.update({
-                "logo": contractor.logo.url if contractor.logo else None,
-                "location": contractor.location if contractor.location else None,
-                "rating": contractor.rating if contractor.rating else None,
-                "description": contractor.profile_description if contractor.profile_description else None,
-            })
+            contractor_info = {
+                'logo': contractor.logo.url if contractor.logo else None,
+                'location': contractor.location if contractor.location else None,
+                'rating': contractor.rating if contractor.rating else None,
+                'description': contractor.profile_description if contractor.profile_description else None,
+            }
         except Contractor.DoesNotExist:
-            response_data["contractor_info"] = "Contractor details not found"
+            contractor_info = {'logo': None}
 
-    return JsonResponse(response_data)
-    
+    return JsonResponse({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'type': user.user_type,
+  
+        **(contractor_info or {}),  # Add contractor-specific info if available
+    })
+
 def user_info(request):
     user = request.user
     return JsonResponse({

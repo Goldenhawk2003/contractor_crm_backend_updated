@@ -15,8 +15,6 @@ from celery.schedules import crontab
 from datetime import timedelta
 from decouple import config
 import os
-import dj_database_url
-
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -32,48 +30,26 @@ SECRET_KEY = 'django-insecure-&dse1c2s@8zio8t5^)lsy$af^*8(+#@h^#eptk^e3xva=#xqk*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['ecc-backend-8684636373f0.herokuapp.com','127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app', 'testserver',]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app']
 
 
 AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where User is defined
 
 
 CORS_ALLOWED_ORIGINS = [
-
-   "https://ecc-frontend-0ce8d42f6dc5.herokuapp.com",
- ]
-
-CORS_ALLOW_HEADERS = [
-    'authorization',
-    'content-type',
-    'x-requested-with',
-    'accept',
-    'origin',
-    'x-csrftoken',
-    'x-xsrf-token'
+    'http://localhost:3000',
 ]
-
-
-SESSION_ENGINE = "django.contrib.sessions.backends.db" 
-SESSION_COOKIE_HTTPONLY = False
-SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_NAME = 'csrftoken'
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-
 CSRF_TRUSTED_ORIGINS = [
-
-    "https://ecc-frontend-0ce8d42f6dc5.herokuapp.com",
-    "https://ecc-backend-8684636373f0.herokuapp.com",
+    'http://localhost:3000',
 ]
 
- # Protect against JavaScript access  # Required for cross-origin auth
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep sessions active
-SESSION_COOKIE_AGE = 1209600 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Default session engine
 SESSION_COOKIE_NAME = 'sessionid'  # The name of the session cookie
-
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False 
 # Application definition
 
 INSTALLED_APPS = [
@@ -95,15 +71,15 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # Place CORS middleware at the top
-    'django.contrib.sessions.middleware.SessionMiddleware',  # Ensure session works first
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',  # CSRF middleware must be after sessions
+    
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = False 
@@ -134,12 +110,26 @@ ASGI_APPLICATION = 'contractor_crm_backend.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'contractor_crm_db',    # Name of the PostgreSQL database you created
+        'USER': 'crm_user',          # PostgreSQL username
+        'PASSWORD': 'ammar2003',  # PostgreSQL password
+        'HOST': 'localhost',             # Database host, 'localhost' if running locally
+        'PORT': '5432',                  # PostgreSQL port (default is 5432)
+    }
 }
-
-
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
+    }
+}
 
 
 # Password validation
@@ -186,7 +176,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
@@ -199,14 +189,19 @@ CELERY_BEAT_SCHEDULE = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',  # ✅ Required for session auth
+        'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Keep JWT for token-based authentication if needed
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+     "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FormParser",
     ],
 }
-
 
 LOGIN_URL = '/api/login/'
 
@@ -225,6 +220,9 @@ CHANNEL_LAYERS = {
     },
 }
 
+
+SESSION_COOKIE_AGE = 1209600  # Two weeks in seconds (2 weeks)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 LOGIN_REDIRECT_URL = '/home/'
 
@@ -245,6 +243,15 @@ TOKEN_URL = "https://account-d.docusign.com/oauth/token"
 DOCUSIGN_BASE_PATH = "https://demo.docusign.net/restapi"  # Use production URL in production
 CLIENT_ID = "a0769e40-cd97-4e92-a79b-8021247aeaf3"
 CLIENT_SECRET = "0f55b6ae-77d3-4271-b58c-8a757095da53"
+REDIRECT_URI = "http://localhost:8000/docusign/callback"
+
+DOCUSIGN = {
+    "INTEGRATION_KEY": "a0769e40-cd97-4e92-a79b-8021247aeaf3",
+    "USER_ID": "31467551",
+    "PRIVATE_KEY": "0f55b6ae-77d3-4271-b58c-8a757095da53",
+    "BASE_PATH": "http://localhost:8000/docusign/callback",  # Sandbox
+    "ACCOUNT_ID": "31467551",
+}
 
 STRIPE_SECRET_KEY = 'sk_test_51QSiGBF7wkMLsTtpa5iRWHQjKTh3EhBrCJMHnqlDaGNVgN7lUx8SYXHgwowaqGRMFwRenqjm1lF0dWQdKw6BiI3V00UNbrSWcd'
 STRIPE_PUBLISHABLE_KEY = 'pk_test_51QSiGBF7wkMLsTtpBBzTCQOPHg8otgHraZEnvAO7Tqv1U6vdERKvFIjAfdykTzcZqE8z50u7N69Qspz4Sk4gpbvm00bGltNgjo'
@@ -253,5 +260,3 @@ STRIPE_PUBLISHABLE_KEY = 'pk_test_51QSiGBF7wkMLsTtpBBzTCQOPHg8otgHraZEnvAO7Tqv1U
 CSP_STYLE_SRC = ["'self'", "'unsafe-inline'", "https://*.stripe.com"]
 CSP_SCRIPT_SRC = ["'self'", "https://js.stripe.com"]
 CSP_CONNECT_SRC = ["'self'", "https://api.stripe.com", "https://*.stripe.com"]
-
-
