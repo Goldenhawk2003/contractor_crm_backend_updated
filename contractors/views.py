@@ -531,35 +531,41 @@ def login_view(request):
 
 
 # Ensures only authenticated users can access this view
-@csrf_exempt 
+ 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])  # Ensures only authenticated users can access
 def get_user_info(request):
     user = request.user
-    # Check if the user is a contractor and fetch additional info if they are
-    contractor_info = None
-    if user.user_type == "professional":  # Assuming "professional" indicates contractors
+
+    # Check if the user is authenticated
+    if not user.is_authenticated:
+        return JsonResponse({"error": "User not authenticated"}, status=401)
+
+    # Default response data
+    response_data = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "type": getattr(user, "user_type", "unknown"),  # Avoids AttributeError
+    }
+
+    # If user is a contractor, fetch additional info
+    if getattr(user, "user_type", None) == "professional":
         try:
             contractor = Contractor.objects.get(user=user)
-            contractor_info = {
-                'logo': contractor.logo.url if contractor.logo else None,
-                'location': contractor.location if contractor.location else None,
-                'rating': contractor.rating if contractor.rating else None,
-                'description': contractor.profile_description if contractor.profile_description else None,
-            }
+            response_data.update({
+                "logo": contractor.logo.url if contractor.logo else None,
+                "location": contractor.location if contractor.location else None,
+                "rating": contractor.rating if contractor.rating else None,
+                "description": contractor.profile_description if contractor.profile_description else None,
+            })
         except Contractor.DoesNotExist:
-            contractor_info = {'logo': None}
+            response_data["contractor_info"] = "Contractor details not found"
 
-    return JsonResponse({
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'type': user.user_type,
-  
-        **(contractor_info or {}),  # Add contractor-specific info if available
-    })
-
+    return JsonResponse(response_data)
+    
 def user_info(request):
     user = request.user
     return JsonResponse({
