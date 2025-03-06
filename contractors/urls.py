@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ContractorViewSet, ContractListView, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view, get_user_info, get_quiz_questions, submit_quiz_response,ContractorByUserView, ConversationListView, MessageListView, CreateMessageView, ContactView, stripe_webhook, create_payment_intent, create_invoice, ServiceRequestView
+from .views import ContractorViewSet, ContractListView, InvoiceViewSet, ClientViewSet, PaymentViewSet, register_user,csrf_token_view,  get_quiz_questions, submit_quiz_response,ContractorByUserView, ConversationListView, MessageListView, CreateMessageView, ContactView, stripe_webhook, create_payment_intent, create_invoice, ServiceRequestView
 from django.contrib import admin
 from .views import register
 from .views import QuizSubmitView, admin_dashboard
