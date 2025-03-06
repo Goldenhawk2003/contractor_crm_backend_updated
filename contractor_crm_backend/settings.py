@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-&dse1c2s@8zio8t5^)lsy$af^*8(+#@h^#eptk^e3xva=#xqk*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['ecc-backend-8684636373f0.herokuapp.com','127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app']
+ALLOWED_HOSTS = ['ecc-backend-8684636373f0.herokuapp.com','127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app', 'testserver',]
 
 
 AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where User is defined
@@ -54,13 +54,13 @@ CORS_ALLOW_HEADERS = [
 ]
 
 
-CORS_ALLOW_CREDENTIALS = True  # Required for cookies to be sent
-CORS_ALLOW_ALL_ORIGINS = True  # Keep it False to avoid conflicts
-SESSION_COOKIE_SECURE = True  # Ensures secure cookies over HTTPS
+SESSION_ENGINE = "django.contrib.sessions.backends.db" 
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = False # Ensures CSRF cookie is only sent over HTTPS
-SESSION_COOKIE_SAMESITE = "None"  # Required for cross-origin authentication
-CSRF_COOKIE_SAMESITE = "None"  
+CORS_ALLOW_CREDENTIALS = True
 
 
 CSRF_TRUSTED_ORIGINS = [
@@ -69,14 +69,11 @@ CSRF_TRUSTED_ORIGINS = [
     "https://ecc-backend-8684636373f0.herokuapp.com",
 ]
 
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies" # Default session engine
-SESSION_COOKIE_SECURE = True  # Secure cookies only for HTTPS
-SESSION_COOKIE_HTTPONLY = True  # Protect against JavaScript access
-SESSION_COOKIE_SAMESITE = "None"  # Required for cross-origin auth
+ # Protect against JavaScript access  # Required for cross-origin auth
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep sessions active
 SESSION_COOKIE_AGE = 1209600 
 SESSION_COOKIE_NAME = 'sessionid'  # The name of the session cookie
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -202,17 +199,14 @@ CELERY_BEAT_SCHEDULE = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.SessionAuthentication',  # ✅ Required for session auth
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',  # Remove Browsable API to avoid CSRF issues
-    ),
 }
+
 
 LOGIN_URL = '/api/login/'
 

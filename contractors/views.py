@@ -483,16 +483,51 @@ def register_user(request):
 @csrf_exempt
 @api_view(['POST'])
 def login_view(request):
-    if request.method == "POST":
+    try:
         data = json.loads(request.body)
         username = data.get("username")
         password = data.get("password")
-        user = authenticate(request, username=username, password=password)
+
+        if not username or not password:
+            return JsonResponse({"error": "Username and password required"}, status=400)
+
+        user = authenticate(username=username, password=password)
+
         if user is not None:
             login(request, user)
-            return JsonResponse({"success": "Logged in successfully."}, status=200)
-        return JsonResponse({"error": "Invalid credentials."}, status=400)
-    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+            response = JsonResponse({
+                "message": "Login successful",
+                "session_id": request.session.session_key
+            })
+
+            # ✅ Ensure sessionid is set
+            response.set_cookie(
+                key="sessionid",
+                value=request.session.session_key,
+                httponly=True,
+                samesite="None",
+                secure=True
+            )
+
+            # ✅ Ensure CSRF token is refreshed
+            response.set_cookie(
+                key="csrftoken",
+                value=get_token(request),
+                httponly=False,
+                samesite="None",
+                secure=True
+            )
+
+            return response
+
+        return JsonResponse({"error": "Invalid credentials"}, status=400)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+
+    except Exception as e:
+        return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
 
 
 # Ensures only authenticated users can access this view
