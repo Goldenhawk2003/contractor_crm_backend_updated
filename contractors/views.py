@@ -495,34 +495,34 @@ def login_view(request):
 
 
  # Ensures only authenticated users can access this view
-def get_user_info(request):
+class UserInfoView(APIView):
     permission_classes = [IsAuthenticated]
-    user = request.user
 
-    # Check if the user is a contractor and fetch additional info if they are
-    contractor_info = None
-    if user.user_type == "professional":  # Assuming "professional" indicates contractors
-        try:
-            contractor = Contractor.objects.get(user=user)
-            contractor_info = {
-                'logo': contractor.logo.url if contractor.logo else None,
-                'location': contractor.location if contractor.location else None,
-                'rating': contractor.rating if contractor.rating else None,
-                'description': contractor.profile_description if contractor.profile_description else None,
-            }
-        except Contractor.DoesNotExist:
-            contractor_info = {'logo': None}
+    def get(self, request, format=None):
+        user = request.user
+        contractor_info = None
+        if user.user_type == "professional":
+            try:
+                contractor = Contractor.objects.get(user=user)
+                contractor_info = {
+                    'logo': contractor.logo.url if contractor.logo else None,
+                    'location': contractor.location or None,
+                    'rating': contractor.rating or None,
+                    'description': contractor.profile_description or None,
+                }
+            except Contractor.DoesNotExist:
+                contractor_info = {'logo': None}
 
-    return JsonResponse({
-        'id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'type': user.user_type,
-  
-        **(contractor_info or {}),  # Add contractor-specific info if available
-    })
+        data = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'type': user.user_type,
+            **(contractor_info or {}),
+        }
+        return Response(data)
 
 def user_info(request):
     user = request.user

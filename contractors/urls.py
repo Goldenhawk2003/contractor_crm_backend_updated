@@ -36,7 +36,7 @@ urlpatterns = [
     path('api/register/', register_user, name='register_user'),
     path('api/login/', views.login_view, name='login'),
     path('api/csrf_token/', csrf_token_view),
-    path('api/user-info/', get_user_info, name='user-info'),
+    path('api/user-info/', views.UserInfoView.as_view(), name='user-info'),
     path('api/user-info-superuser/', views.user_info, name='user-info-superuser'),
     path('api/quiz/questions/', get_quiz_questions, name='quiz-questions'),
     path('api/quiz/submit/', submit_quiz_response, name='quiz-submit'),
