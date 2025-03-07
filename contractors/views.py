@@ -56,7 +56,7 @@ from rest_framework import generics
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.mail import EmailMultiAlternatives
 from django.views.decorators.csrf import ensure_csrf_cookie
-
+import jwt
 # this is a scraped view that is supposed to use your quiz answers to suggest a contractor
 # Ultimaltely it was decided that for now a manual selection of a contractor would be better
 def suggest_contractor_based_on_answer(answer):
@@ -308,17 +308,28 @@ def register(request):
     return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
 
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class QuizSubmitView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        # Optional: manually decode the token for debugging
+        auth_header = request.META.get("HTTP_AUTHORIZATION")
+        if auth_header:
+            try:
+                # Remove "Bearer " prefix if present
+                token = auth_header.split(" ")[1]
+                payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+                print("Decoded token payload:", payload)
+            except jwt.ExpiredSignatureError:
+                return Response({"error": "Token expired"}, status=401)
+            except jwt.InvalidTokenError:
+                return Response({"error": "Invalid token"}, status=401)
+        
+        # Proceed with the view logic if token is valid
         client = request.user.client
-        # Assuming quiz answers have been saved in ClientQuizResponse
         service = QuizMatchService()
         matched_contractors = service.match_client_to_contractor(client)
-        
-        # Return the matched contractors to the client
         serializer = ContractorSerializer(matched_contractors, many=True)
         return Response(serializer.data)
     
