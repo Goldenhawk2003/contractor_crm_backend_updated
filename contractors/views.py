@@ -313,19 +313,16 @@ class QuizSubmitView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        # Debugging: print request.user to verify authentication
-        print("QuizSubmitView: request.user =", request.user)
-        
-        # Proceed only if the user is authenticated
+        # Debug: log the user
+        print("QuizSubmitView POST called; request.user =", request.user)
         if request.user.is_anonymous:
             return Response({"error": "User is not authenticated."}, status=401)
-        
-        client = request.user.client  # Assumes token auth populates request.user correctly.
+
+        client = request.user.client  # Ensure this is valid
         service = QuizMatchService()
         matched_contractors = service.match_client_to_contractor(client)
         serializer = ContractorSerializer(matched_contractors, many=True)
         return Response(serializer.data)
-    
 
 
 
