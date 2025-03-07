@@ -308,19 +308,14 @@ def register(request):
     return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class QuizSubmitView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request, *args, **kwargs):
-        # Debug: log the user
-        print("QuizSubmitView POST called; request.user =", request.user)
-        if request.user.is_anonymous:
-            return Response({"error": "User is not authenticated."}, status=401)
-
-        client = request.user.client  # Ensure this is valid
+        client = request.user.client
+        # Assuming quiz answers have been saved in ClientQuizResponse
         service = QuizMatchService()
         matched_contractors = service.match_client_to_contractor(client)
+        
+        # Return the matched contractors to the client
         serializer = ContractorSerializer(matched_contractors, many=True)
         return Response(serializer.data)
 
