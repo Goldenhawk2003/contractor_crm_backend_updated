@@ -313,21 +313,14 @@ class QuizSubmitView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        # Optional: manually decode the token for debugging
-        auth_header = request.META.get("HTTP_AUTHORIZATION")
-        if auth_header:
-            try:
-                # Remove "Bearer " prefix if present
-                token = auth_header.split(" ")[1]
-                payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-                print("Decoded token payload:", payload)
-            except jwt.ExpiredSignatureError:
-                return Response({"error": "Token expired"}, status=401)
-            except jwt.InvalidTokenError:
-                return Response({"error": "Invalid token"}, status=401)
+        # Debugging: print request.user to verify authentication
+        print("QuizSubmitView: request.user =", request.user)
         
-        # Proceed with the view logic if token is valid
-        client = request.user.client
+        # Proceed only if the user is authenticated
+        if request.user.is_anonymous:
+            return Response({"error": "User is not authenticated."}, status=401)
+        
+        client = request.user.client  # Assumes token auth populates request.user correctly.
         service = QuizMatchService()
         matched_contractors = service.match_client_to_contractor(client)
         serializer = ContractorSerializer(matched_contractors, many=True)
