@@ -307,7 +307,11 @@ def register(request):
     user = User.objects.create_user(username=username, password=password)
     return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
 
+
+
 class QuizSubmitView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         client = request.user.client
         # Assuming quiz answers have been saved in ClientQuizResponse
