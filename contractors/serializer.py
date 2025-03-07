@@ -113,6 +113,7 @@ class TutorialsSerializer(serializers.ModelSerializer):
 
 
 class BlogSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(use_url=True)
     class Meta:
         model = Blog
         fields = ['id','title', 'content', 'image', 'created_at', 'replies']
