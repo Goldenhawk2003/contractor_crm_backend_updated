@@ -501,6 +501,7 @@ class UserInfoView(APIView):
     def get(self, request, format=None):
         user = request.user
         contractor_info = None
+
         if user.user_type == "professional":
             try:
                 contractor = Contractor.objects.get(user=user)
@@ -520,6 +521,7 @@ class UserInfoView(APIView):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'type': user.user_type,
+            'is_superuser': user.is_superuser,  # Added superuser check
             **(contractor_info or {}),
         }
         return Response(data)
