@@ -112,22 +112,31 @@ class TutorialsSerializer(serializers.ModelSerializer):
 
 
 
+
+
 class BlogSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(use_url=True)
+    image = serializers.ImageField(use_url=True, required=False)
+    replies = serializers.SerializerMethodField()  # List of replies
+    author = serializers.StringRelatedField(read_only=True)  # Show username
+    image_url = serializers.SerializerMethodField()  # Optional: full URL if needed
+
     class Meta:
         model = Blog
-        fields = ['id','title', 'content', 'image', 'created_at', 'replies']
+        fields = ['id', 'title', 'content', 'image', 'image_url', 'author', 'created_at', 'replies']
+        read_only_fields = ['author', 'created_at']
 
-    def create(self, validated_data):
-        validated_data['author'] = self.context['request'].user  # Assign logged-in user
-        return super().create(validated_data)
     def get_replies(self, obj):
-        return [reply.content for reply in obj.blogreply_set.all()]  
-    def get_image(self, obj):
+        return [reply.content for reply in obj.blogreply_set.all()]  # ✅ Collect reply contents
+
+    def get_image_url(self, obj):
         request = self.context.get('request')
         if obj.image:
-            return request.build_absolute_uri(obj.image.url)  # Full URL
+            return request.build_absolute_uri(obj.image.url)  # ✅ Full URL to image
         return None
+
+    def create(self, validated_data):
+        validated_data['author'] = self.context['request'].user  # ✅ Auto-assign author
+        return super().create(validated_data)
     
 class BlogReplySerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)  # Show username instead of ID
