@@ -57,6 +57,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.mail import EmailMultiAlternatives
 from django.views.decorators.csrf import ensure_csrf_cookie
 import jwt
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 # this is a scraped view that is supposed to use your quiz answers to suggest a contractor
 # Ultimaltely it was decided that for now a manual selection of a contractor would be better
 def suggest_contractor_based_on_answer(answer):
@@ -1241,10 +1242,28 @@ def view_tutorial(request, pk):
     except Tutorials.DoesNotExist:
         return Response({"error": "Tutorial not found"}, status=404)
     
+
+
+
+class IsAuthorOrReadOnly(BasePermission):
+    """
+    Custom permission to only allow authors of a blog to edit or delete it.
+    Others can only view (GET).
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # SAFE_METHODS are GET, HEAD, OPTIONS (read-only)
+        if request.method in SAFE_METHODS:
+            return True  # ✅ Anyone can read
+
+        # Write permissions are only allowed to the author of the blog
+        return obj.author == request.user  # ✅ Only author can edit/delete
+    
+
 class BlogDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Blog.objects.all()
+    queryset = Blog.objects.all()  # ✅ Allow retrieving any blog
     serializer_class = BlogSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly] 
 
 
 
