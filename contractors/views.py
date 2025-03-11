@@ -641,10 +641,15 @@ class CreateMessageView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
-@permission_classes([IsAuthenticated]) 
+@api_view(['GET'])  # ✅ Tell DRF it's a GET API
+@permission_classes([IsAuthenticated])  # ✅ Now works properly
 def unread_messages_count(request):
-    unread_count = Message.objects.filter(conversation__participants=request.user, is_read=False).exclude(sender=request.user).count()
-    return JsonResponse({"unread_count": unread_count})
+    unread_count = Message.objects.filter(
+        conversation__participants=request.user,
+        is_read=False
+    ).exclude(sender=request.user).count()
+
+    return Response({"unread_count": unread_count}) 
 
 @method_decorator(csrf_exempt, name='dispatch')  # Disable CSRF for this view
 class ContactView(APIView):
