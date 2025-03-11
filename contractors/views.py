@@ -1245,16 +1245,18 @@ class BlogDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Blog.objects.all()
     serializer_class = BlogSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-        
-    def get_queryset(self):
-        
-         return Blog.objects.filter(author=self.request.user)
-    
-class BlogListCreateView(generics.ListCreateAPIView):  # Supports GET & POST
+
+
+
+class BlogListCreateView(generics.ListCreateAPIView):
     queryset = Blog.objects.all().order_by("-created_at")
     serializer_class = BlogSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-    
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)  # ✅ Auto-assign author
+
+
 class BlogReplyCreateView(generics.CreateAPIView):
     queryset = BlogReply.objects.all()
     serializer_class = BlogReplySerializer
