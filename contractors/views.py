@@ -109,6 +109,7 @@ def get_quiz_questions(request):
 
 # View to submit a quiz response
 @csrf_exempt
+@permission_classes([IsAuthenticated]) 
 def submit_quiz_response(request):
     if request.method == 'POST':
         # Parse request data
@@ -642,7 +643,7 @@ class CreateMessageView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
-
+@permission_classes([IsAuthenticated]) 
 def unread_messages_count(request):
     unread_count = Message.objects.filter(conversation__participants=request.user, is_read=False).exclude(sender=request.user).count()
     return JsonResponse({"unread_count": unread_count})
