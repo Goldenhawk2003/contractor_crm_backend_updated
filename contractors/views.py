@@ -109,7 +109,6 @@ def get_quiz_questions(request):
 
 # View to submit a quiz response
 @csrf_exempt
-@login_required
 def submit_quiz_response(request):
     if request.method == 'POST':
         # Parse request data
@@ -643,7 +642,7 @@ class CreateMessageView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
-@login_required
+
 def unread_messages_count(request):
     unread_count = Message.objects.filter(conversation__participants=request.user, is_read=False).exclude(sender=request.user).count()
     return JsonResponse({"unread_count": unread_count})
@@ -757,7 +756,7 @@ def get_received_contracts(request):
     ]
     return JsonResponse({"contracts": data}, status=200)
 
-@login_required  # Ensure the user is authenticated
+ # Ensure the user is authenticated
 def sign_contract(request):
     if request.method == "POST":
         try:
@@ -784,7 +783,7 @@ def sign_contract(request):
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
-@login_required
+
 def get_user_consents(request):
     user = request.user
     consents = ContractConsent.objects.filter(user=user, consent_given=True).values(
