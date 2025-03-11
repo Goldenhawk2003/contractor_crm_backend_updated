@@ -77,7 +77,17 @@ INSTALLED_APPS = [
     'django_extensions',
     'drf_yasg',
     'corsheaders',
+    'unfold',
 ]
+UNFOLD = {
+    "SITE_TITLE": "Elite Craft's Contractors",
+    "SITE_HEADER": "Elite Craft's Admin",
+    "SITE_BRAND": "Elite Craft",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "DARK_MODE": True,  # optional dark mode
+    "COLLAPSIBLE_NAV": True,
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
