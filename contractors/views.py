@@ -108,28 +108,26 @@ def get_quiz_questions(request):
         return JsonResponse({"questions": question_list}, safe=False)
 
 # View to submit a quiz response
-@csrf_exempt
-@permission_classes([IsAuthenticated]) 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def submit_quiz_response(request):
-    if request.method == 'POST':
-        # Parse request data
-        data = json.loads(request.body)
-        quiz_id = data.get('quiz_id')
-        answer = data.get('answer')
+    data = request.data
+    quiz_id = data.get('quiz_id')
+    answer = data.get('answer')
 
-        # Validate input
-        quiz = get_object_or_404(Quiz, id=quiz_id)
+    print("Received quiz_id:", quiz_id)
+    print("Received answer:", answer)
+    print("User submitting:", request.user)
 
-        # Save response
-        FormResponse.objects.create(
-            client=request.user,  # Ensure the user is authenticated
-            quiz=quiz,
-            answer=answer,
-        )
+    quiz = get_object_or_404(Quiz, id=quiz_id)
 
-        return JsonResponse({"message": "Response submitted successfully!"}, status=201)
+    FormResponse.objects.create(
+        client=request.user,
+        quiz=quiz,
+        answer=answer,
+    )
 
-    return JsonResponse({"error": "Invalid request method"}, status=400)
+    return Response({"message": "Response submitted successfully!"}, status=201)
 
 # View to display the form responses dashboard, in this project form and quiz are used interchangebly
 def form_responses_dashboard(request):
