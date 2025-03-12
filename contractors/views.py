@@ -818,7 +818,7 @@ def get_sent_contracts(request):
             "title": contract.title,
             "recipient": contract.recipient.username if contract.recipient else "Unknown",
             "is_signed": contract.is_signed,
-            "created_at": contract.created_at,  #  Corrected field name
+            "sent_at": contract.sent_at,  #  Corrected field name
         }
         for contract in sent_contracts
     ]
