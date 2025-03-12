@@ -703,6 +703,8 @@ class ContactView(APIView):
 
 
 
+@api_view(['POST'])  # ✅ Enforces this is a POST-only API
+@permission_classes([IsAuthenticated]) 
 def send_contract(request):
     if request.method == "POST":
         try:
