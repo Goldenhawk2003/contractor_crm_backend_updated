@@ -642,8 +642,8 @@ class CreateMessageView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
-@api_view(['GET'])  # ✅ Tell DRF it's a GET API
-@permission_classes([IsAuthenticated])  # ✅ Now works properly
+@api_view(['GET'])  #  Tell DRF it's a GET API
+@permission_classes([IsAuthenticated])  # Now works properly
 def unread_messages_count(request):
     unread_count = Message.objects.filter(
         conversation__participants=request.user,
@@ -703,7 +703,7 @@ class ContactView(APIView):
 
 
 
-@api_view(['POST'])  # ✅ Enforces this is a POST-only API
+@api_view(['POST'])  # Enforces this is a POST-only API
 @permission_classes([IsAuthenticated]) 
 def send_contract(request):
     if request.method == "POST":
@@ -765,7 +765,7 @@ def get_received_contracts(request):
     return JsonResponse({"contracts": data}, status=200)
 
  # Ensure the user is authenticated
-@api_view(['POST'])  # ✅ Ensures it's API POST only
+@api_view(['POST'])  # Ensures it's API POST only
 @permission_classes([IsAuthenticated]) 
 def sign_contract(request):
     if request.method == "POST":
@@ -803,28 +803,27 @@ def get_user_consents(request):
 
 logger = logging.getLogger(__name__)
 
+@api_view(['GET'])  # Handle only GET requests properly
+@permission_classes([IsAuthenticated])  # User must be logged in
 def get_sent_contracts(request):
-    if request.method == "GET":
-        contractor = request.user
-        print(f"Logged-in user: {contractor}")  # Debug log
+    contractor = request.user
+    print(f"Logged-in user: {contractor}")  # Debug log
 
-        sent_contracts = Contract.objects.filter(sender=contractor)  # Filter contracts sent by this user
-        print(f"Sent contracts for {contractor}: {sent_contracts}")  # Debug log
+    sent_contracts = Contract.objects.filter(sender=contractor)  # Contracts sent by this user
+    print(f"Sent contracts for {contractor}: {sent_contracts}")  # Debug log
 
-        data = [
-            {
-                "id": contract.id,
-                "title": contract.title,
-                "recipient": contract.recipient.username if contract.recipient else "Unknown",
-                "is_signed": contract.is_signed,
-                "sent_at": contract.sent_at,
-            }
-            for contract in sent_contracts
-        ]
+    data = [
+        {
+            "id": contract.id,
+            "title": contract.title,
+            "recipient": contract.recipient.username if contract.recipient else "Unknown",
+            "is_signed": contract.is_signed,
+            "created_at": contract.created_at,  #  Corrected field name
+        }
+        for contract in sent_contracts
+    ]
 
-        return JsonResponse({"contracts": data}, status=200)
-
-    return JsonResponse({"error": "Invalid request method."}, status=405)
+    return JsonResponse({"contracts": data}, status=200)
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -1259,14 +1258,14 @@ class IsAuthorOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
         # SAFE_METHODS are GET, HEAD, OPTIONS (read-only)
         if request.method in SAFE_METHODS:
-            return True  # ✅ Anyone can read
+            return True  # Anyone can read
 
         # Write permissions are only allowed to the author of the blog
-        return obj.author == request.user  # ✅ Only author can edit/delete
+        return obj.author == request.user  #  Only author can edit/delete
     
 
 class BlogDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Blog.objects.all()  # ✅ Allow retrieving any blog
+    queryset = Blog.objects.all()  # Allow retrieving any blog
     serializer_class = BlogSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly] 
 
@@ -1278,7 +1277,7 @@ class BlogListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)  # ✅ Auto-assign author
+        serializer.save(author=self.request.user)  #  Auto-assign author
 
 
 class BlogReplyCreateView(generics.CreateAPIView):
