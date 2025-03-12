@@ -299,11 +299,74 @@ class PaymentViewSet(viewsets.ModelViewSet):
 def register(request):
     username = request.data.get('username')
     password = request.data.get('password')
-    
+    email = request.data.get('email')  # ✅ Now we are capturing the user's email
+
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    user = User.objects.create_user(username=username, password=password)
+
+    user = User.objects.create_user(username=username, password=password, email=email)
+
+    # ✅ Send beautiful HTML email
+    if user.email:
+        subject = "🎉 Welcome to Elite Craft Contractors!"
+        
+        # Company logo URL (host this in Cloudinary/GitHub/Static server)
+        company_logo_url = "https://goldenhawk2003.github.io/My_Website/logos/IMG_2582.PNG"  # ✅ Replace with your actual logo
+
+        # HTML content
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+            <div style="max-width: 600px; background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+                <div style="text-align: center;">
+                    <img src="{company_logo_url}" alt="Elite Craft Contractors" style="max-width: 150px;">
+                </div>
+                <h2 style="color: #1b3656; text-align: center;">Welcome to Elite Craft Contractors, {username}!</h2>
+                <p>Thank you for signing up. We are excited to have you on board.</p>
+                <p>Start exploring and connect with professionals for all your contractor needs.</p>
+                <p style="text-align: center;">
+                    <a href="https://www.elitecraftcontractors.ca/login/"
+                       style="background: #1b3656; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                       Login to Your Account
+                    </a>
+                </p>
+                <p>If you have any questions, feel free to reply to this email.</p>
+                <p style="font-size: 12px; color: #888888; text-align: center;">
+                    This is an automated message. Please do not reply directly to this email.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+
+        # Plain text fallback
+        text_content = f"""
+        Welcome to Elite Craft Contractors, {username}!
+
+        Thank you for signing up. We are excited to have you on board.
+
+        Please login to your account: https://www.elitecraftcontractors.ca/login/
+
+        If you have any questions, feel free to reach out.
+
+        This is an automated message. Please do not reply directly to this email.
+        """
+
+        try:
+            email_message = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email='your-email@gmail.com',  # Replace with your sender email
+                to=[user.email],
+            )
+            email_message.attach_alternative(html_content, "text/html")  # Attach HTML version
+            email_message.send()
+
+            print(f"📩 Welcome email sent successfully to {user.email}")
+
+        except Exception as e:
+            print(f"❌ Failed to send welcome email: {e}")
+
     return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
 
 
@@ -965,7 +1028,7 @@ def reply_to_conversation(request, conversation_id):
                     {content}
                 </blockquote>
                 <p style="text-align: center;">
-                    <a href="https://yourwebsite.com/conversation/{conversation.id}/" 
+                    <a href="https://www.elitecraftcontractors.ca/conversation/{conversation.id}/" 
                        style="background: #1b3656; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
                         View Conversation
                     </a>
@@ -987,7 +1050,7 @@ def reply_to_conversation(request, conversation_id):
 
         "{content}"
 
-        Please log in to view and reply: https://yourwebsite.com/conversation/{conversation.id}/
+        Please log in to view and reply: https://www.elitecraftcontractors.ca/conversation/{conversation.id}/
 
         Thank you for using Elite Craft Contractors!
         """
