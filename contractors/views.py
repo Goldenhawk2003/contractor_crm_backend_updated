@@ -1028,7 +1028,7 @@ def reply_to_conversation(request, conversation_id):
                     {content}
                 </blockquote>
                 <p style="text-align: center;">
-                    <a href="https://www.elitecraftcontractors.ca/conversation/{conversation.id}/" 
+                    <a href="https://www.elitecraftcontractors.ca/" 
                        style="background: #1b3656; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
                         View Conversation
                     </a>
@@ -1050,7 +1050,7 @@ def reply_to_conversation(request, conversation_id):
 
         "{content}"
 
-        Please log in to view and reply: https://www.elitecraftcontractors.ca/conversation/{conversation.id}/
+        Please log in to view and reply: https://www.elitecraftcontractors.ca/
 
         Thank you for using Elite Craft Contractors!
         """
