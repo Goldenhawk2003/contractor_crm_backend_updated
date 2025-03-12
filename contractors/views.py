@@ -748,7 +748,8 @@ def send_contract(request):
 
 
 
-
+@api_view(['GET'])
+@permission_classes([IsAuthenticated]) 
 def get_received_contracts(request):
     contracts = Contract.objects.filter(recipient=request.user)
     data = [
@@ -764,6 +765,8 @@ def get_received_contracts(request):
     return JsonResponse({"contracts": data}, status=200)
 
  # Ensure the user is authenticated
+@api_view(['POST'])  # ✅ Ensures it's API POST only
+@permission_classes([IsAuthenticated]) 
 def sign_contract(request):
     if request.method == "POST":
         try:
