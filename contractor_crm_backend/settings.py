@@ -28,7 +28,7 @@ BASE_DIR =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'django-insecure-&dse1c2s@8zio8t5^)lsy$af^*8(+#@h^#eptk^e3xva=#xqk*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', '6b1f-216-249-49-34.ngrok-free.app', 'ecc-backend-31b43c38f51f.herokuapp.com']
 
@@ -37,7 +37,8 @@ AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where Us
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
-    "https://ecc-frontend-b2cf36d48aa5.herokuapp.com",  # HTTP version
+    "https://ecc-frontend-b2cf36d48aa5.herokuapp.com",
+  # HTTP version
   
 ]
 CSRF_COOKIE_NAME = 'csrftoken'
