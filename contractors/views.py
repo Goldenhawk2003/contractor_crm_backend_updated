@@ -375,49 +375,36 @@ def register(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([AllowAny])  # Public access
 def forgot_password(request):
     email = request.data.get('email')
+    
     if not email:
-        return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
-        return Response({"error": "No account found with this email"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'If an account with this email exists, a reset link has been sent.'}, status=status.HTTP_200_OK)  # Don't reveal if user exists
 
-    token = default_token_generator.make_token(user)
-    reset_url = f"https://www.elitecraftcontractors.ca/reset-password/{user.pk}/{token}/"
+    # -- Generate reset link logic (mocked here, should be implemented properly later) --
+    reset_link = f"https://www.elitecraftcontractors.ca/reset-password/{user.pk}/"  # Placeholder link for now
+    
+    # -- Send email (mock or real) --
+    try:
+        send_mail(
+            subject='Password Reset Request',
+            message=f"Hi {user.username},\n\nYou can reset your password using this link: {reset_link}\n\nIf you did not request this, please ignore this email.",
+            from_email='elitecraftnoreply@example.com',  # Adjust this
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        print(f"Password reset email sent to {email}")
+    except Exception as e:
+        print(f"❌ Failed to send email: {str(e)}")
+        return Response({'error': 'Failed to send reset email.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # Email sending
-    subject = "🔑 Reset Your Password - Elite Craft Contractors"
-    text_content = f"""
-    Hello {user.username},
-
-    You requested to reset your password. Click the link below to set a new password:
-    {reset_url}
-
-    If you did not request this, you can ignore this email.
-
-    Thank you!
-    """
-    html_content = f"""
-    <html>
-    <body>
-        <h2>Password Reset Request</h2>
-        <p>Hello <strong>{user.username}</strong>,</p>
-        <p>You requested to reset your password. Click the link below to set a new password:</p>
-        <p><a href="{reset_url}" style="padding: 10px 20px; background: #1b3656; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
-        <p>If you did not request this, you can ignore this email.</p>
-    </body>
-    </html>
-    """
-
-    email_message = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [user.email])
-    email_message.attach_alternative(html_content, "text/html")
-    email_message.send()
-
-    return Response({"message": "Password reset email sent."}, status=status.HTTP_200_OK)
+    return Response({'message': 'If an account with this email exists, a reset link has been sent.'}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
