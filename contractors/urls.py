@@ -76,7 +76,7 @@ urlpatterns = [
     path('contractors/<int:contractor_id>/tutorials/', views.ContractorTutorialsView.as_view(), name='contractor-tutorials'),
     path('api/unread-messages/', views.unread_messages_count, name='unread-messages'),
     path('api/forgot-password/', views.forgot_password, name='forgot-password'),
-    path('api/reset-password/<int:uid>/<str:token>/', views.reset_password, name='reset-password'),
+    path('api/reset-password/<uidb64>/<token>/', views.ResetPasswordConfirmView.as_view(), name='password_reset_confirm'),
 
 ]
 
