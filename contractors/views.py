@@ -388,7 +388,7 @@ def forgot_password(request):
         return Response({'message': 'If an account with this email exists, a reset link has been sent.'}, status=status.HTTP_200_OK)  # Don't reveal if user exists
 
     # -- Generate reset link logic (mocked here, should be implemented properly later) --
-    reset_link = f"https://www.elitecraftcontractors.ca/reset-password/{user.pk}/"  # Placeholder link for now
+    reset_link = f"http://www.elitecraftcontractors.ca/reset-password/{uid}/{token}/"  # Placeholder link for now
     
     # -- Send email (mock or real) --
     try:
