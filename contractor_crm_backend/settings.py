@@ -39,8 +39,9 @@ SECURE_SSL_REDIRECT = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     "https://ecc-frontend-b2cf36d48aa5.herokuapp.com",
-    "http://www.elitecraftcontractors.ca",  # HTTP version
     "https://www.elitecraftcontractors.ca",
+    "http://www.elitecraftcontractors.ca",  # HTTP version
+  
 ]
 CSRF_COOKIE_NAME = 'csrftoken'
 CORS_ALLOW_ALL_ORIGINS = True
