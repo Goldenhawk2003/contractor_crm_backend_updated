@@ -58,6 +58,8 @@ from django.core.mail import EmailMultiAlternatives
 from django.views.decorators.csrf import ensure_csrf_cookie
 import jwt
 from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import  parser_classes
 # this is a scraped view that is supposed to use your quiz answers to suggest a contractor
 # Ultimaltely it was decided that for now a manual selection of a contractor would be better
 def suggest_contractor_based_on_answer(answer):
@@ -296,24 +298,29 @@ class PaymentViewSet(viewsets.ModelViewSet):
         invoice.save()
 
 @api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])  # Important for FormData
 def register(request):
     username = request.data.get('username')
     password = request.data.get('password')
-    email = request.data.get('email')  # ✅ Now we are capturing the user's email
+    email = request.data.get('email')
+    logo = request.FILES.get('logo')  # If you want to process this
+    role = request.data.get('role')
 
+    # Validation
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
+    if User.objects.filter(email=email).exists():
+        return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Create User
     user = User.objects.create_user(username=username, password=password, email=email)
+    print(f"✅ User {username} created.")
 
-    # ✅ Send beautiful HTML email
+    # ---- HTML Email ---- #
     if user.email:
         subject = "🎉 Welcome to Elite Craft Contractors!"
-        
-        # Company logo URL (host this in Cloudinary/GitHub/Static server)
-        company_logo_url = "https://goldenhawk2003.github.io/My_Website/logos/IMG_2582.PNG"  # ✅ Replace with your actual logo
+        company_logo_url = "https://goldenhawk2003.github.io/My_Website/logos/IMG_2582.PNG"
 
-        # HTML content
         html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
@@ -322,50 +329,45 @@ def register(request):
                     <img src="{company_logo_url}" alt="Elite Craft Contractors" style="max-width: 150px;">
                 </div>
                 <h2 style="color: #1b3656; text-align: center;">Welcome to Elite Craft Contractors, {username}!</h2>
-                <p>Thank you for signing up. We are excited to have you on board.</p>
-                <p>Start exploring and connect with professionals for all your contractor needs.</p>
+                <p>Thank you for signing up. We're excited to have you on board.</p>
+                <p>Get started now and find top professionals or new clients!</p>
                 <p style="text-align: center;">
                     <a href="https://www.elitecraftcontractors.ca/login/"
                        style="background: #1b3656; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
                        Login to Your Account
                     </a>
                 </p>
-                <p>If you have any questions, feel free to reply to this email.</p>
+                <p>Feel free to reach out if you have questions.</p>
                 <p style="font-size: 12px; color: #888888; text-align: center;">
-                    This is an automated message. Please do not reply directly to this email.
+                    This is an automated message. Please do not reply.
                 </p>
             </div>
         </body>
         </html>
         """
 
-        # Plain text fallback
         text_content = f"""
         Welcome to Elite Craft Contractors, {username}!
 
-        Thank you for signing up. We are excited to have you on board.
+        Thank you for signing up. We're excited to have you on board.
 
         Please login to your account: https://www.elitecraftcontractors.ca/login/
 
-        If you have any questions, feel free to reach out.
-
-        This is an automated message. Please do not reply directly to this email.
+        This is an automated message. Please do not reply.
         """
 
         try:
             email_message = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,
-                from_email='your-email@gmail.com',  # Replace with your sender email
+                from_email=settings.DEFAULT_FROM_EMAIL,  # Pull dynamically
                 to=[user.email],
             )
-            email_message.attach_alternative(html_content, "text/html")  # Attach HTML version
+            email_message.attach_alternative(html_content, "text/html")
             email_message.send()
-
             print(f"📩 Welcome email sent successfully to {user.email}")
-
         except Exception as e:
-            print(f"❌ Failed to send welcome email: {e}")
+            print(f"❌ Failed to send email: {e}")
 
     return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
 
