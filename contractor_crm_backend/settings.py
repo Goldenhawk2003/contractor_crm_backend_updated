@@ -38,6 +38,8 @@ AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where Us
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     "https://ecc-frontend-b2cf36d48aa5.herokuapp.com",
+     "http://www.elitecraftcontractors.ca",  # ✅ Add HTTP version explicitly
+    "https://www.elitecraftcontractors.ca",
   # HTTP version
   
 ]
@@ -45,9 +47,17 @@ CSRF_COOKIE_NAME = 'csrftoken'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
+SECURE_SSL_REDIRECT = False  # ✅ Don't force SSL
+
+# Don't use secure cookies (temporarily)
+SESSION_COOKIE_SECURE = False  # ✅ Don't force HTTPS for sessions
+CSRF_COOKIE_SECURE = False  #
+
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     "https://ecc-frontend-b2cf36d48aa5.herokuapp.com",
+     "http://www.elitecraftcontractors.ca",  # ✅ Add HTTP version explicitly
+    "https://www.elitecraftcontractors.ca",
 ]
 CORS_ALLOW_METHODS = [
     "GET",
