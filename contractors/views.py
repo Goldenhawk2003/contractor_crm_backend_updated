@@ -375,6 +375,7 @@ def register(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def forgot_password(request):
     email = request.data.get('email')
     if not email:
