@@ -61,6 +61,9 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import  parser_classes
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 # this is a scraped view that is supposed to use your quiz answers to suggest a contractor
 # Ultimaltely it was decided that for now a manual selection of a contractor would be better
 def suggest_contractor_based_on_answer(answer):
@@ -387,6 +390,11 @@ def forgot_password(request):
     except User.DoesNotExist:
         return Response({'message': 'If an account with this email exists, a reset link has been sent.'}, status=status.HTTP_200_OK)  # Don't reveal if user exists
 
+
+    token_generator = PasswordResetTokenGenerator()
+
+    token = token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
     # -- Generate reset link logic (mocked here, should be implemented properly later) --
     reset_link = f"http://www.elitecraftcontractors.ca/reset-password/{uid}/{token}/"  # Placeholder link for now
     
