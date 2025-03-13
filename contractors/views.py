@@ -60,6 +60,7 @@ import jwt
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import  parser_classes
+from django.contrib.auth.tokens import default_token_generator
 # this is a scraped view that is supposed to use your quiz answers to suggest a contractor
 # Ultimaltely it was decided that for now a manual selection of a contractor would be better
 def suggest_contractor_based_on_answer(answer):
@@ -370,6 +371,70 @@ def register(request):
             print(f"❌ Failed to send email: {e}")
 
     return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+
+
+
+@api_view(['POST'])
+def forgot_password(request):
+    email = request.data.get('email')
+    if not email:
+        return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({"error": "No account found with this email"}, status=status.HTTP_404_NOT_FOUND)
+
+    token = default_token_generator.make_token(user)
+    reset_url = f"https://www.elitecraftcontractors.ca/reset-password/{user.pk}/{token}/"
+
+    # Email sending
+    subject = "🔑 Reset Your Password - Elite Craft Contractors"
+    text_content = f"""
+    Hello {user.username},
+
+    You requested to reset your password. Click the link below to set a new password:
+    {reset_url}
+
+    If you did not request this, you can ignore this email.
+
+    Thank you!
+    """
+    html_content = f"""
+    <html>
+    <body>
+        <h2>Password Reset Request</h2>
+        <p>Hello <strong>{user.username}</strong>,</p>
+        <p>You requested to reset your password. Click the link below to set a new password:</p>
+        <p><a href="{reset_url}" style="padding: 10px 20px; background: #1b3656; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
+        <p>If you did not request this, you can ignore this email.</p>
+    </body>
+    </html>
+    """
+
+    email_message = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [user.email])
+    email_message.attach_alternative(html_content, "text/html")
+    email_message.send()
+
+    return Response({"message": "Password reset email sent."}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def reset_password(request, uid, token):
+    new_password = request.data.get('password')
+
+    try:
+        user = User.objects.get(pk=uid)
+    except User.DoesNotExist:
+        return Response({"error": "Invalid user"}, status=status.HTTP_404_NOT_FOUND)
+
+    if not default_token_generator.check_token(user, token):
+        return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(new_password)
+    user.save()
+    return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
+
 
 
 class QuizSubmitView(APIView):
