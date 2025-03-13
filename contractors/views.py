@@ -396,7 +396,7 @@ def forgot_password(request):
     token = token_generator.make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     # -- Generate reset link logic (mocked here, should be implemented properly later) --
-    reset_link = f"http://www.elitecraftcontractors.ca/reset-password/{uid}/{token}/"  # Placeholder link for now
+    reset_link = f"https://www.elitecraftcontractors.ca/reset-password/{uid}/{token}/"  # Placeholder link for now
     
     # -- Send email (mock or real) --
     try:

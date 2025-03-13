@@ -35,7 +35,7 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'b9d7-216-249-49-34.ngrok-free.app', 
 
 AUTH_USER_MODEL = 'contractors.User'  # Replace 'your_app' with the app where User is defined
 
-
+SECURE_SSL_REDIRECT = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     "https://ecc-frontend-b2cf36d48aa5.herokuapp.com",
