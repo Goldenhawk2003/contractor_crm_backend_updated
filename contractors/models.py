@@ -8,6 +8,7 @@ from rest_framework_simplejwt.tokens import OutstandingToken
 from django.core.exceptions import ValidationError
 import os
 from django.utils.text import slugify
+from cloudinary.models import CloudinaryField
 # Create your models here.
 
 class User(AbstractUser):
@@ -293,8 +294,8 @@ def validate_video_or_image(value):
 class Tutorials(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    video = models.FileField(upload_to="tutorials/videos/", validators=[validate_video_or_image])
-    thumbnail = models.ImageField(upload_to="tutorials/thumbnails/", null=True, blank=True)
+    video =  CloudinaryField('video', resource_type='video')  # ✅ Explicit Cloudinary field
+    thumbnail = CloudinaryField('image', resource_type='image', blank=True, null=True)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tutorials", null=True, blank=True)
