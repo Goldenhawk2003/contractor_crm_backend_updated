@@ -16,6 +16,9 @@ from datetime import timedelta
 from decouple import config
 import os
 import dj_database_url
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR =  os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -81,17 +84,9 @@ INSTALLED_APPS = [
     'django_extensions',
     'drf_yasg',
     'corsheaders',
-    'unfold',
+ 
 ]
-UNFOLD = {
-    "SITE_TITLE": "Elite Craft's Contractors",
-    "SITE_HEADER": "Elite Craft's Admin",
-    "SITE_BRAND": "Elite Craft",
-    "SHOW_HISTORY": True,
-    "SHOW_VIEW_ON_SITE": True,
-    "DARK_MODE": True,  # optional dark mode
-    "COLLAPSIBLE_NAV": True,
-}
+
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'dkilbcw3a',
     'API_KEY': '596188183636686',
