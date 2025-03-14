@@ -117,7 +117,7 @@ class TutorialsSerializer(serializers.ModelSerializer):
 
     def get_video_url(self, obj):
         if obj.video:
-            return cloudinary.CloudinaryVideo(str(obj.video)).build_url(resource_type="video", format="mp4")
+            return cloudinary.CloudinaryVideo(str(obj.video)).build_url(resource_type="video", format="mp4", secure=True)
         return None
 
     def get_thumbnail_url(self, obj):
