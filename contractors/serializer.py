@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Contractor, Contract, Client, Invoice, Payment, Message, Conversation,User, Tutorials, Blog, BlogReply
-
+import cloudinary
 
 # Serializer for Contractor model
 class ContractorSerializer(serializers.ModelSerializer):
@@ -108,7 +108,15 @@ class TutorialsSerializer(serializers.ModelSerializer):
         model = Tutorials
         fields = ['id', 'title', 'description', 'video', 'thumbnail', 'created_at', 'tags',  'uploaded_by']
 
-       
+    def get_video_url(self, obj):
+        if obj.video:
+            return cloudinary.CloudinaryImage(obj.video.name).build_url(resource_type="video")
+        return None
+
+    def get_thumbnail_url(self, obj):
+        if obj.thumbnail:
+            return cloudinary.CloudinaryImage(obj.thumbnail.name).build_url()
+        return None  
 
 
 
