@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'cloudinary_storage',
+    'cloudinary',
     'contractors',
     'django_celery_beat',
     'rest_framework_simplejwt.token_blacklist',
@@ -90,6 +92,13 @@ UNFOLD = {
     "DARK_MODE": True,  # optional dark mode
     "COLLAPSIBLE_NAV": True,
 }
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dkilbcw3a',
+    'API_KEY': '596188183636686',
+    'API_SECRET': 'pdCHHRKC9PiekEcCQl6dKY-Of_U',
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
