@@ -149,3 +149,5 @@ whitenoise==6.9.0
 zope.interface==7.1.1
 gunicorn==20.1.0
 django-unfold>=0.18.0
+cloudinary==1.39.0
+django-cloudinary-storage==0.3.0
