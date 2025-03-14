@@ -110,19 +110,19 @@ class TutorialsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tutorials
         fields = [
-            'id', 'title', 'description', 
-            'video_url', 'thumbnail_url', 
+            'id', 'title', 'description',
+            'video_url', 'thumbnail_url',
             'created_at', 'tags', 'uploaded_by'
         ]
 
     def get_video_url(self, obj):
         if obj.video:
-            return cloudinary.CloudinaryVideo(obj.video.name).build_url(resource_type="video", format="mp4")
+            return cloudinary.CloudinaryVideo(str(obj.video)).build_url(resource_type="video", format="mp4")
         return None
 
     def get_thumbnail_url(self, obj):
         if obj.thumbnail:
-            return cloudinary.CloudinaryImage(obj.thumbnail.name).build_url()
+            return cloudinary.CloudinaryImage(str(obj.thumbnail)).build_url()
         return None
 
 
