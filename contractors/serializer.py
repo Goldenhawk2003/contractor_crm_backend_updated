@@ -103,21 +103,27 @@ class SendContractSerializer(serializers.Serializer):
         return data
     
 class TutorialsSerializer(serializers.ModelSerializer):
+    video_url = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
     uploaded_by = serializers.ReadOnlyField(source="uploaded_by.username")
+
     class Meta:
         model = Tutorials
-        fields = ['id', 'title', 'description', 'video', 'thumbnail', 'created_at', 'tags',  'uploaded_by']
+        fields = [
+            'id', 'title', 'description', 
+            'video_url', 'thumbnail_url', 
+            'created_at', 'tags', 'uploaded_by'
+        ]
 
     def get_video_url(self, obj):
         if obj.video:
-            return cloudinary.CloudinaryImage(obj.video.name).build_url(resource_type="video")
+            return cloudinary.CloudinaryVideo(obj.video.name).build_url(resource_type="video", format="mp4")
         return None
 
     def get_thumbnail_url(self, obj):
         if obj.thumbnail:
             return cloudinary.CloudinaryImage(obj.thumbnail.name).build_url()
-        return None  
-
+        return None
 
 
 
