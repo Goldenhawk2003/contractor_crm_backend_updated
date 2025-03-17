@@ -64,6 +64,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
+import dateutil.parser
 # this is a scraped view that is supposed to use your quiz answers to suggest a contractor
 # Ultimaltely it was decided that for now a manual selection of a contractor would be better
 def suggest_contractor_based_on_answer(answer):
@@ -74,21 +75,26 @@ def suggest_contractor_based_on_answer(answer):
 def submit_quiz_response(request):
     if request.method == 'POST':
         answer = request.POST.get('answer')
-        client = request.user  # Assuming the client is logged in otherwise it wont send through
+        client = request.user
         quiz = Quiz.objects.get(id=request.POST.get('quiz_id'))
 
-        # Get contractor suggestion based on the answer
+        # If question type is date, parse the date
+        if quiz.question_type == 'date':
+            try:
+                answer = dateutil.parser.parse(answer)  # Parse string into datetime object
+            except (ValueError, TypeError):
+                return JsonResponse({'error': 'Invalid date format'}, status=400)
+
+        # Suggested contractor logic as is
         suggested_contractor = suggest_contractor_based_on_answer(answer)
 
-        # Create a form response
         form_response = FormResponse.objects.create(
             client=client,
             quiz=quiz,
-            answer=answer,
+            answer=answer,  # This can be string or datetime depending on type
             contractor_suggestion=suggested_contractor
         )
 
-        # Render a response or redirect
         return render(request, 'quiz_result.html', {'form_response': form_response})
 
     return render(request, 'quiz.html') # The template was scrapped in order to keep everything on the frontend flowing through react

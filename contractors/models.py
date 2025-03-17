@@ -93,6 +93,7 @@ class Quiz(models.Model):
     QUESTION_TYPES = [
         ('text', 'Text Answer'),  # Open-ended text-based question
         ('multiple_choice', 'Multiple Choice'),
+        ('date', 'Date Picker'), 
     ]
     question = models.CharField(max_length=255)  # Question text
     description = models.TextField(blank=True, null=True)  # Optional description for the question
