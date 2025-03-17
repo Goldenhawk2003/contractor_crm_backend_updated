@@ -94,6 +94,7 @@ class Quiz(models.Model):
         ('text', 'Text Answer'),  # Open-ended text-based question
         ('multiple_choice', 'Multiple Choice'),
         ('date', 'Date Picker'), 
+        ('text_with_image', 'Text Answer with Optional Image'),
     ]
     question = models.CharField(max_length=255)  # Question text
     description = models.TextField(blank=True, null=True)  # Optional description for the question
@@ -112,6 +113,8 @@ class FormResponse(models.Model):
     client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='form_responses')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='responses')
     answer = models.CharField(max_length=255, blank=True, null=True)  # Client's answer for text-based questions
+    answer_date = models.DateTimeField(blank=True, null=True)
+    answer_image = CloudinaryField('image', resource_type='image', blank=True, null=True)
     selected_choice = models.CharField(max_length=255, blank=True, null=True)  # For multiple-choice questions
     contractor_suggestion = models.ForeignKey('Contractor', on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp when the response was created

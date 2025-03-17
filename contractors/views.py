@@ -74,30 +74,28 @@ def suggest_contractor_based_on_answer(answer):
 # View to record the client's quiz response
 def submit_quiz_response(request):
     if request.method == 'POST':
-        answer = request.POST.get('answer')
         client = request.user
         quiz = Quiz.objects.get(id=request.POST.get('quiz_id'))
+        answer = request.POST.get('answer')
+        image = request.FILES.get('image')  # ✅ Get image from files
 
-        # If question type is date, parse the date
+        # Optional date parsing if needed
         if quiz.question_type == 'date':
             try:
-                answer = dateutil.parser.parse(answer)  # Parse string into datetime object
+                answer = dateutil.parser.parse(answer)
             except (ValueError, TypeError):
                 return JsonResponse({'error': 'Invalid date format'}, status=400)
-
-        # Suggested contractor logic as is
-        suggested_contractor = suggest_contractor_based_on_answer(answer)
 
         form_response = FormResponse.objects.create(
             client=client,
             quiz=quiz,
-            answer=answer,  # This can be string or datetime depending on type
-            contractor_suggestion=suggested_contractor
+            answer=answer if quiz.question_type != 'date' else None,
+            answer_date=answer if quiz.question_type == 'date' else None,
+            answer_image=image if quiz.question_type == 'text_with_image' else None,
+            contractor_suggestion=suggest_contractor_based_on_answer(answer),
         )
 
-        return render(request, 'quiz_result.html', {'form_response': form_response})
-
-    return render(request, 'quiz.html') # The template was scrapped in order to keep everything on the frontend flowing through react
+        return JsonResponse({'status': 'success'}) # The template was scrapped in order to keep everything on the frontend flowing through react
 
 # View to display the quiz questions
 def get_quiz_questions(request):
