@@ -530,6 +530,7 @@ User = get_user_model()
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@parser_classes([MultiPartParser, FormParser])  # Allows handling FormData
 def register_user(request):
     logger = logging.getLogger(__name__)
     logger.info(f"Received data: {request.data}")
@@ -560,6 +561,12 @@ def register_user(request):
     if role == 'professional' and not job_type:
         return Response({"error": "Job type is required for professionals"}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Ensure unique username and email
+    if User.objects.filter(username=username).exists():
+        return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
+    if User.objects.filter(email=email).exists():
+        return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         if role == 'client':
             # Register client immediately
@@ -575,6 +582,10 @@ def register_user(request):
             )
             Client.objects.create(user=user)
             logger.info(f"Client {username} registered successfully")
+
+            # Send welcome email
+            send_welcome_email(user, role)
+
             return Response(
                 {"message": "Client registered successfully", "id": user.id},
                 status=status.HTTP_201_CREATED
@@ -600,6 +611,10 @@ def register_user(request):
                 logo=logo
             )
             logger.info(f"Contractor application for {username} submitted successfully")
+
+            # Send welcome email
+            send_welcome_email(user, role)
+
             return Response(
                 {"message": "Contractor application submitted successfully. Pending admin approval.", "id": user.id},
                 status=status.HTTP_201_CREATED
@@ -608,6 +623,69 @@ def register_user(request):
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def send_welcome_email(user, role):
+    """Function to send a welcome email"""
+    if not user.email:
+        return
+
+    subject = "🎉 Welcome to Elite Craft Contractors!"
+    company_logo_url = "https://goldenhawk2003.github.io/My_Website/logos/IMG_2582.PNG"
+
+    # Customize message for different roles
+    if role == 'client':
+        intro_message = f"Thank you for signing up as a **client**. You can now find top professionals for your needs!"
+    else:
+        intro_message = f"Thank you for signing up as a **professional**. Your application is pending admin approval."
+
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+        <div style="max-width: 600px; background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <div style="text-align: center;">
+                <img src="{company_logo_url}" alt="Elite Craft Contractors" style="max-width: 150px;">
+            </div>
+            <h2 style="color: #1b3656; text-align: center;">Welcome to Elite Craft Contractors, {user.username}!</h2>
+            <p>{intro_message}</p>
+            <p>Get started now and explore your dashboard!</p>
+            <p style="text-align: center;">
+                <a href="https://www.elitecraftcontractors.ca/login/"
+                   style="background: #1b3656; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                   Login to Your Account
+                </a>
+            </p>
+            <p>Feel free to reach out if you have questions.</p>
+            <p style="font-size: 12px; color: #888888; text-align: center;">
+                This is an automated message. Please do not reply.
+            </p>
+        </div>
+    </body>
+    </html>
+    """
+
+    text_content = f"""
+    Welcome to Elite Craft Contractors, {user.username}!
+
+    {intro_message}
+
+    Please login to your account: https://www.elitecraftcontractors.ca/login/
+
+    This is an automated message. Please do not reply.
+    """
+
+    try:
+        email_message = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,  # Dynamically pulled
+            to=[user.email],
+        )
+        email_message.attach_alternative(html_content, "text/html")
+        email_message.send()
+        print(f"📩 Welcome email sent successfully to {user.email}")
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
 
 @csrf_exempt
 def login_view(request):
